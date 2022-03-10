@@ -22,6 +22,13 @@ async function getTokenMintTimestamp(collectionAddress, tokenId) {
     })
 }
 
+async function getLastTransferTimestamp(collectionAddress, tokenId) {
+    await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", undefined, "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
+    .then(json => {
+        console.log("Nft Last Transfer: " + web3.utils.hexToNumber(json["result"][json["result"].length - 1 ]["timeStamp"]));
+    })
+}
+
 async function getTokensSupply(collectionAddress) { // TODO
     await api.account.txlist(collectionAddress, 1, 'latest', 1, 10000, 'asc')
     .then(json => {
@@ -62,7 +69,8 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
 	getTokenMintAddress(collectionAddress, id); // Get Nft Minter Address
 	getTokenURI(contract, id); // Get Nft URI
 	getNftOwner(contract, id); // Get Nft Name
+	getLastTransferTimestamp(collectionAddress, id); // Get Nft Last Transfer Event.
 
 }
 
-getNftInfoByCollectionAndId("0x22a57B008336908B04bB3B2beDfDeB000459a0C3", 3)
+getNftInfoByCollectionAndId("0xeE29700134AAB4f45b113E43E29ff06ce10687b7", 3)
