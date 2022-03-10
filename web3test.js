@@ -658,10 +658,17 @@ async function getTokenMintTimestamp(collectionAddress, tokenId) {
     })
 }
 
-async function getTokensSupply(collectionAddress) {
+async function getTokensSupply(collectionAddress) { // TODO
     await api.account.txlist(collectionAddress, 1, 'latest', 1, 10000, 'asc')
     .then(json => {
          console.log("Total Collection Nfts: " + json["result"].length);
+    })
+}
+
+async function getTokenMintAddress(collectionAddress, tokenId) {
+    await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", "0x0000000000000000000000000000000000000000000000000000000000000000", "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
+    .then(json => {
+        console.log("Nft Minter: " + web3.utils.toHex(web3.utils.hexToNumberString(json["result"][0]["topics"][2])));
     })
 }
 
@@ -673,6 +680,7 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     getContractCreator(collectionAddress).catch(err => console.log(err)); // Prints Contract Creator
     getTokenMintTimestamp(collectionAddress, id).catch(err => console.log(err)); // Mint Timestamp
     getTokensSupply(collectionAddress).catch(err => console.log(err)); // Get Nft Collection Total Supply
+	getTokenMintAddress(collectionAddress, id); // Get Nft Minter Address
 
 }
 
