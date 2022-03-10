@@ -37,7 +37,14 @@ async function getTokenMintAddress(collectionAddress, tokenId) {
 }
 
 async function getTokenURI(contract, tokenId) {
-	await contract.methods.tokenURI(tokenId).call().then(res => fetch(res)).then(json => json.json()).then(output => console.log("Nft Name: " + output["name"]));
+	await contract.methods.tokenURI(tokenId).call().then(res => fetch(res)).then(json => json.json()).then(output => {
+		console.log("Nft Name: " + output["name"]);
+		console.log("Nft Image: " + output["image"]);
+	});
+}
+
+async function getNftOwner(contract, id) {
+	await contract.methods.ownerOf(id).call().then(res => console.log("Owner of Nft: " + res));
 }
 
 
@@ -50,7 +57,8 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     getTokensSupply(collectionAddress).catch(err => console.log(err)); // Get Nft Collection Total Supply
 	getTokenMintAddress(collectionAddress, id); // Get Nft Minter Address
 	getTokenURI(contract, id); // Get Nft URI
+	getNftOwner(contract, id); // Get Nft Name
 
 }
 
-getNftInfoByCollectionAndId("0xf5B4659861775Ec92AE75895d5E3742D26D11E67", 3)
+getNftInfoByCollectionAndId("0x22a57B008336908B04bB3B2beDfDeB000459a0C3", 3)
