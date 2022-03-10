@@ -647,21 +647,21 @@ const ERC20Abi = [
 async function getContractCreator(collectionAddress) {
     await api.account.txlist(collectionAddress, 0, 99999999,'asc')
     .then(json => {
-        console.log(json["result"][0]["from"]);
+        console.log("Contract Creator: " + json["result"][0]["from"]);
     }); 
 }
 
 async function getTokenMintTimestamp(collectionAddress, tokenId) {
     await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", "0x0000000000000000000000000000000000000000000000000000000000000000", "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
     .then(json => {
-        console.log(web3.utils.hexToNumber(json["result"][0]["timeStamp"]));
+        console.log("Nft Mint Timestamp: " + web3.utils.hexToNumber(json["result"][0]["timeStamp"]));
     })
 }
 
 async function getTokensSupply(collectionAddress) {
     await api.account.txlist(collectionAddress, 1, 'latest', 1, 10000, 'asc')
     .then(json => {
-         console.log(json["result"]);
+         console.log("Total Collection Nfts: " + json["result"].length);
     })
 }
 
