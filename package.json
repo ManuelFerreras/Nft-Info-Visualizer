@@ -1,0 +1,17 @@
+{
+  "name": "web3-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "etherscan-api": "^10.0.5",
+    "node-fetch": "^3.2.2",
+    "web3": "^1.7.1"
+  }
+}
