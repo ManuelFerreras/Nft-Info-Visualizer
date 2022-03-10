@@ -38,6 +38,7 @@ async function getTokenMintAddress(collectionAddress, tokenId) {
 
 async function getTokenURI(contract, tokenId) {
 	await contract.methods.tokenURI(tokenId).call().then(res => fetch(res)).then(json => json.json()).then(output => {
+		console.log("Nft Token URI: " + output);
 		console.log("Nft Name: " + output["name"]);
 		console.log("Nft Image: " + output["image"]);
 	});
