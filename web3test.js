@@ -37,10 +37,13 @@ async function getTokenMintAddress(collectionAddress, tokenId) {
 }
 
 async function getTokenURI(contract, tokenId) {
-	await contract.methods.tokenURI(tokenId).call().then(res => fetch(res)).then(json => json.json()).then(output => {
-		console.log("Nft Token URI: " + output);
+	await contract.methods.tokenURI(tokenId).call().then(res => {
+		console.log("IPFS Url: " + res);
+		fetch(res).then(json => json.json()).then(output => {
+		console.log("Nft Token URI: " + res);
 		console.log("Nft Name: " + output["name"]);
 		console.log("Nft Image: " + output["image"]);
+		});
 	});
 }
 
