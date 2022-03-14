@@ -58,48 +58,49 @@ async function getTokenURI(contract, tokenId) {
 }
 
 async function checkIfOpenSource(collectionAddress) {
-    await api.contract.getabi(collectionAddress)
+    return await api.contract.getabi(collectionAddress)
     .then(json => {
-        console.log(json)
         if(json["status"] == 1) {
-            console.log('Open Source')
+            return(true);
         }
     })
     .catch( () => {
-        console.log("Not Open Source");
+        return(false);
     });
+
 }
 
 async function getNftOwner(contract, id) {
 	await contract.methods.ownerOf(id).call().then(res => console.log("Owner of Nft: " + res));
 }
 
-async function checkIfComplies(collectionAddress) {
-    await collectionAddress.methods.supportsInterface("0x80ac58cd").call().then(async res => {
+async function checkIfComplies(contract) { // Returns an array: [ERC721Verification, ERC1155Verification] true: complies, false: does not comply
+    return await contract.methods.supportsInterface("0x80ac58cd").call().then(async res => {
         if(!res) {
-            console.log("Not ERC721");
-            await collectionAddress.methods.supportsInterface("0xd9b67a26").call().then(res => {
+            return await contract.methods.supportsInterface("0xd9b67a26").call().then(res => {
                 if(res) {
-                    console.log("Is ERC1155");
+                    return [false, true];
                 } else {
-                    console.log("Not ERC1155");
+                    return [false, false];
                 }
             });
         } else {
-            console.log("Is ERC721");
+            return [true, false];
         }
+    }).catch(() => {
+        return [false, false];
     });
 }
 
 async function checkIfOptimized(collectionAddress) {
-    await fetch(`https://api.etherscan.io/api?module=contract&action=getsourcecode&address=${collectionAddress}&apikey=KXX4T9HFVXGFZ5ZV1B3MXXG7RSSKWRD3DC`).then(async res => {
-        res.json().then(res => {
+    return await fetch(`https://api.etherscan.io/api?module=contract&action=getsourcecode&address=${collectionAddress}&apikey=KXX4T9HFVXGFZ5ZV1B3MXXG7RSSKWRD3DC`).then(async res => {
+        return res.json().then(res => {
             if(res["result"][0]["OptimizationUsed"] == 1) {
-                console.log("Optimized");
+                return true;
             } else if (res["result"][0]["OptimizationUsed"] == 0) {
-                console.log("Not Optimized");
+                return false;
             } else {
-                console.log("Contract Not Verified");
+                console.log("Contract is Not Verified");
             }
         });
     });
@@ -117,6 +118,7 @@ async function checkMetadata(contract, tokenId) {
             console.log("Metadata: " + res);
             checkMetadataFields(res);
             checkIfIPFSMetadata(res);
+            checkUrlSSL(res);
         }
     }).catch(() => {
         console.log("Metadata ERROR: Non Existent Token Id");
@@ -134,26 +136,73 @@ async function checkMetadataFields(metadataURL) {
 }
 
 async function checkIfIPFSMetadata(metadataURL) {
-    console.log(metadataURL.includes("ipfs"));
+    if(metadataURL.includes("ipfs")) {
+        console.log("Metadata Uploaded to IPFS.");
+    } else {
+        console.log("Metadata Not Uploaded to IPFS")
+    }
+}
+
+async function checkUrlSSL(url) {
+    if(url.toLowerCase().startsWith("https://")) {
+        console.log("Metadata Uses SSL");
+    } else {
+        console.log("Metadata Does not Use SSL");
+    }
+}
+
+async function checkIfAudited(contractAddress) {
+    return await fetch(`https://etherscan.io/address/${contractAddress}#code`).then(async res => {
+         return await res.text().then(res => {
+            if(res.includes("No Contract Security Audit Submitted")) {
+                return false;
+            } else {
+                return true;
+            }
+        });
+    });
 }
 
 
 
 async function getNftInfoByCollectionAndId(collectionAddress, id) {
+    let opensource;
+    let erc721compliant;
+    let erc1155compliant;
+    let auditedContract;
+    let optimizedContract;
 
     const contract = new web3.eth.Contract(ERC721Abi, collectionAddress);
     
-    // getContractCreator(collectionAddress).then(console.log).catch(err => console.log(err)); // Prints Contract Creator
-    // getTokenMintTimestamp(collectionAddress, id).then(console.log).catch(err => console.log(err)); // Mint Timestamp
-    // getTokensSupply(collectionAddress).then(console.log).catch(err => console.log(err)); // Get Nft Collection Total Supply
-	// getTokenMintAddress(collectionAddress, id).then(console.log).catch(err => console.log(err)); // Get Nft Minter Address
-	// getTokenURI(contract, id).then(console.log).catch(err => console.log(err)); // Get Nft URI
-	// getNftOwner(contract, id).then(console.log).catch(err => console.log(err)); // Get Nft Name
-	// getLastTransferTimestamp(collectionAddress, id).then(console.log).catch(err => console.log(err)); // Get Nft Last Transfer Event.
-    // checkIfOpenSource(collectionAddress); 
+    await checkIfOpenSource(collectionAddress).then(res => {
+        opensource = res;
 
-    checkMetadata(contract, id);
-    
+        if (res) {
+            console.log('Open Source');
+        } else {
+            console.log('Not Open Source')
+        }
+    }); 
+
+    await checkIfComplies(contract).then(res => {
+        erc721compliant = res[0];
+        erc1155compliant = res[1];
+
+        console.log(erc721compliant? "Is ERC721" : erc1155compliant? "Is ERC1155" : "Does not match with any standard.");
+    });
+
+    await checkIfAudited(collectionAddress).then(res => {
+        console.log(res? "Audited" : "Not Audited");
+        auditedContract = res;
+    });
+
+    await checkIfOptimized(collectionAddress).then(res => {
+        console.log(res? "Contract is Optimized" : "Contract is Not Verified");
+        optimizedContract = res;
+    });
+
+    await checkMetadata(contract, id);
+ 
 }
 
-getNftInfoByCollectionAndId("0x215De37F364801c2306Cc4a4eD63780E614979E7", 8520);
+getNftInfoByCollectionAndId("0x9B0A422F25a5f26A16b2B3A3eb37a72Ae31D3Ec3", 3);
