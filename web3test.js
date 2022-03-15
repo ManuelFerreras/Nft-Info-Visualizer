@@ -120,10 +120,8 @@ async function checkENSName(address) {
 async function checkMetadata(contract, tokenId) {
     return await contract.methods.tokenURI(tokenId).call().then(res => {
         if(res == "") {
-            console.log("No Metadata Available.")
             return "";
         } else {
-            console.log("Metadata: " + res);
             return(res);
         }
     }).catch(() => {
@@ -299,6 +297,12 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
 
     await checkMetadata(contract, id).then(res => metaUrl = res);
 
+    if(metaUrl.startsWith("ipfs://")) {
+        metaUrl = "https://ipfs.io/ipfs/" + metaUrl.split("ipfs://").pop();
+    }
+
+    console.log("Metadata: " + metaUrl);
+
     if(metaUrl != undefined && metaUrl != "" && metaUrl.startsWith("http")) {
         await checkMetadataFields(metaUrl).then(res => metaFieldsStandard = res);
         await checkIfIPFSMetadata(metaUrl).then(res => metaIPFS = res);
@@ -361,4 +365,4 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
  
 }
 
-getNftInfoByCollectionAndId("0xCeAcb5Cc03591B7CD522b3B40D26ef3A21c282F9", 11);
+getNftInfoByCollectionAndId("0x4b61413d4392c806e6d0ff5ee91e6073c21d6430", 11);
