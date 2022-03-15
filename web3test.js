@@ -20,14 +20,14 @@ async function getContractCreator(collectionAddress) {
 }
 
 async function getTokenMintTimestamp(collectionAddress, tokenId) {
-    await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", "0x0000000000000000000000000000000000000000000000000000000000000000", "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
+    return await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", "0x0000000000000000000000000000000000000000000000000000000000000000", "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
     .then(json => {
         return(web3.utils.hexToNumber(json["result"][0]["timeStamp"]));
     })
 }
 
 async function getLastTransferTimestamp(collectionAddress, tokenId) {
-    await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", undefined, "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
+    return await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", undefined, "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
     .then(json => {
         return(web3.utils.hexToNumber(json["result"][json["result"].length - 1 ]["timeStamp"]));
     })
@@ -176,7 +176,7 @@ async function checkIfImageAvailable(metadataURL) {
         if('image' in res) {
             if(res['image'] != "") {
                 console.log("Image is Available.")
-                return true;
+                return res['image'];
             } else {
                 console.log("Image is not Available.")
                 return false;
@@ -234,6 +234,18 @@ async function checkIfImageIsSSL(metadataURL) {
     });
 }
 
+function timeConverter(UNIX_timestamp){
+    var a = new Date(UNIX_timestamp * 1000);
+    var year = a.getFullYear();
+    var month = a.getMonth();
+    var date = a.getDate();
+    var hour = a.getHours();
+    var min = a.getMinutes();
+    var sec = a.getSeconds();
+    var time = month + '/' + date + '/' + year + ' - ' + hour + ':' + min + ':' + sec ;
+    return time;
+}
+
 
 
 async function getNftInfoByCollectionAndId(collectionAddress, id) {
@@ -245,6 +257,9 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     let nftName;
     let nftOwner;
     let nftMinter;
+    let nftLastTransferDate;
+    let nftMintDate;
+    let contractType = "Other";
     let metaUrl;
     let metaFieldsStandard;
     let metaIPFS;
@@ -284,13 +299,13 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
 
     await checkMetadata(contract, id).then(res => metaUrl = res);
 
-    if(metaUrl != undefined && metaUrl != "") {
+    if(metaUrl != undefined && metaUrl != "" && metaUrl.startsWith("http")) {
         await checkMetadataFields(metaUrl).then(res => metaFieldsStandard = res);
         await checkIfIPFSMetadata(metaUrl).then(res => metaIPFS = res);
         await checkUrlSSL(metaUrl).then(res => metaSSL = res);
         await checkIfImageAvailable(metaUrl).then(res => metaImgAvailable = res);
 
-        if (metaImgAvailable) {
+        if (metaImgAvailable != false) {
             await checkIfImageIsIPFS(metaUrl).then(res => metaImgIPFS = res);
             await checkIfImageIsSSL(metaUrl).then(res => metaImgSSL = res);
         } else {
@@ -301,6 +316,21 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
         await getNftName(metaUrl).then(res => nftName = res);
         await getNftOwner(contract, id).then(res => checkENSName(res).then(res => nftOwner = res));
         await getTokenMintAddress(collectionAddress, id).then(res => checkENSName(res).then(res => nftMinter = res));
+        await checkIfComplies(contract).then(res => {
+            if(res[0] == true) {
+                contractType = "ERC-721";
+            } else {
+                contractType = "ERC-1155";
+            }
+        });
+
+        await getLastTransferTimestamp(collectionAddress, id).then(res => {
+            nftLastTransferDate = timeConverter(res);
+        });
+
+        await getTokenMintTimestamp(collectionAddress, id).then(res => {
+            nftMintDate = timeConverter(res);
+        })
 
 
     }
@@ -314,15 +344,15 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
             "contract_address": collectionAddress, // Done
             "token_id": id, // Done
             "chain_id": 1, // Done
-            "mint_timestamp": "02/16/2021 - 09:37:22GMT",
-            "token_type": "ERC-721",
-            "edition_name": 1,
-            "collection_size": 6,
-            "image_url": "https://...",
+            "mint_timestamp": nftMintDate, // Done
+            "token_type": contractType, // Done
+            "edition_name": 0, // Done
+            "collection_size": 0, // Done
+            "image_url": metaImgAvailable, // Done
             "owner": {
                 "owner_name": nftOwner, // Done
-                "purchase_date": "March 11, 2021",
-                "purchase_value": "$69,346,250 USD"
+                "last_transfer_date": nftLastTransferDate, // Done
+                "purchase_value": "$0" // Done
             }
         }
     }
@@ -331,4 +361,4 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
  
 }
 
-getNftInfoByCollectionAndId("0xf732B0BC0097743a88020c6CDB7Ee58Eb43ebEC1", 3);
+getNftInfoByCollectionAndId("0xCeAcb5Cc03591B7CD522b3B40D26ef3A21c282F9", 11);
