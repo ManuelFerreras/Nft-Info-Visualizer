@@ -111,14 +111,13 @@ async function checkENSName(address) {
 }
 
 async function checkMetadata(contract, tokenId) {
-    await contract.methods.tokenURI(tokenId).call().then(res => {
+    return await contract.methods.tokenURI(tokenId).call().then(res => {
         if(res == "") {
             console.log("No Metadata Available.")
+            return "";
         } else {
             console.log("Metadata: " + res);
-            checkMetadataFields(res);
-            checkIfIPFSMetadata(res);
-            checkUrlSSL(res);
+            return(res);
         }
     }).catch(() => {
         console.log("Metadata ERROR: Non Existent Token Id");
@@ -146,8 +145,10 @@ async function checkIfIPFSMetadata(metadataURL) {
 async function checkUrlSSL(url) {
     if(url.toLowerCase().startsWith("https://")) {
         console.log("Metadata Uses SSL");
+        return true;
     } else {
         console.log("Metadata Does not Use SSL");
+        return false;
     }
 }
 
@@ -163,6 +164,69 @@ async function checkIfAudited(contractAddress) {
     });
 }
 
+async function checkIfImageAvailable(metadataURL) {
+    return await fetch(metadataURL).then(res => res.json()).then(res => {
+        if('image' in res) {
+            if(res['image'] != "") {
+                console.log("Image is Available.")
+                return true;
+            } else {
+                console.log("Image is not Available.")
+                return false;
+            }
+        } else {
+            console.log("Metadata Does Not Contain an Image");
+            return false;
+        }
+    });
+}
+
+async function checkIfImageIsIPFS(metadataURL) {
+    return await fetch(metadataURL).then(res => res.json()).then(res => {
+        if('image' in res) {
+            if(res['image'].includes("ipfs")) {
+                console.log("Image is on IPFS")
+                return true;
+            } else {
+                console.log("Image is not on IPFS.")
+                return false;
+            }
+        } else {
+            console.log("Metadata Does Not Contain an Image For IPFS Check");
+            return false;
+        }
+    });
+}
+
+async function getNftName(metadataURL) {
+    return await fetch(metadataURL).then(res => res.json()).then(res => {
+        if('name' in res) {
+            console.log("Metadata Contains The NFT Name: " + res['name']);
+            return res['name'];
+        } else {
+            console.log("Metadata Does Not Contain a Name")
+            return "";
+        }
+    });
+}
+
+async function checkIfImageIsSSL(metadataURL) {
+    return await fetch(metadataURL).then(async res => res.json()).then(async res => {
+        if('image' in res) {
+            if(res['image'].toLowerCase().startsWith("https://")) {
+                console.log("Image Uses SSL");
+                return true;
+            } else {
+                console.log("Image Does not Use SSL");
+                return false;
+            }
+        } else {
+            console.log("Metadata Does Not Contain an Image For SSL Check");
+            return false;
+        }
+    });
+}
+
 
 
 async function getNftInfoByCollectionAndId(collectionAddress, id) {
@@ -171,6 +235,14 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     let erc1155compliant;
     let auditedContract;
     let optimizedContract;
+    let nftName;
+    let metaUrl;
+    let metaFieldsStandard;
+    let metaIPFS;
+    let metaSSL;
+    let metaImgAvailable;
+    let metaImgIPFS;
+    let metaImgSSL;
 
     const contract = new web3.eth.Contract(ERC721Abi, collectionAddress);
     
@@ -201,8 +273,51 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
         optimizedContract = res;
     });
 
-    await checkMetadata(contract, id);
+    await checkMetadata(contract, id).then(res => metaUrl = res);
+
+    if(metaUrl != undefined && metaUrl != "") {
+        await checkMetadataFields(metaUrl).then(res => metaFieldsStandard = res);
+        await checkIfIPFSMetadata(metaUrl).then(res => metaIPFS = res);
+        await checkUrlSSL(metaUrl).then(res => metaSSL = res);
+        await checkIfImageAvailable(metaUrl).then(res => metaImgAvailable = res);
+
+        if (metaImgAvailable) {
+            await checkIfImageIsIPFS(metaUrl).then(res => metaImgIPFS = res);
+            await checkIfImageIsSSL(metaUrl).then(res => metaImgSSL = res);
+        } else {
+            metaImgIPFS = false;
+            metaImgSSL = false;
+        }
+
+        await getNftName(metaUrl).then(res => nftName = res);
+
+
+    }
+
+
+    const obj = {
+        "nft": {
+            "id": 1, // Done
+            "name": nftName,
+            "created_by": "Beeple",
+            "contract_address": collectionAddress, // Done
+            "token_id": id, // Done
+            "chain_id": 1, // Done
+            "mint_timestamp": "02/16/2021 - 09:37:22GMT",
+            "token_type": "ERC-721",
+            "edition_name": 1,
+            "collection_size": 6,
+            "image_url": "https://...",
+            "owner": {
+                "owner_name": "Christie's Auction House",
+                "purchase_date": "March 11, 2021",
+                "purchase_value": "$69,346,250 USD"
+            }
+        }
+    }
+
+    console.log(obj);
  
 }
 
-getNftInfoByCollectionAndId("0x9B0A422F25a5f26A16b2B3A3eb37a72Ae31D3Ec3", 3);
+getNftInfoByCollectionAndId("0xf732B0BC0097743a88020c6CDB7Ee58Eb43ebEC1", 3);
