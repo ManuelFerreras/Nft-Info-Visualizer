@@ -41,7 +41,7 @@ async function getTokensSupply(collectionAddress) { // TODO
 }
 
 async function getTokenMintAddress(collectionAddress, tokenId) {
-    await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", "0x0000000000000000000000000000000000000000000000000000000000000000", "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
+    return await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", "0x0000000000000000000000000000000000000000000000000000000000000000", "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
     .then(json => {
         return(web3.utils.toHex(web3.utils.hexToNumberString(json["result"][0]["topics"][2])));
     })
@@ -71,7 +71,10 @@ async function checkIfOpenSource(collectionAddress) {
 }
 
 async function getNftOwner(contract, id) {
-	await contract.methods.ownerOf(id).call().then(res => console.log("Owner of Nft: " + res));
+	return await contract.methods.ownerOf(id).call().then(res => { 
+       console.log("Owner of Nft: " + res);
+       return res;
+    }).catch(err => console.log("Nft Owner Error: " + err));
 }
 
 async function checkIfComplies(contract) { // Returns an array: [ERC721Verification, ERC1155Verification] true: complies, false: does not comply
@@ -107,7 +110,11 @@ async function checkIfOptimized(collectionAddress) {
 }
 
 async function checkENSName(address) {
-    await ens.reverse(address).name().then(console.log);
+    return await ens.reverse(address).name().then(res => {
+        return res;
+    }).catch(() => {
+        return address;
+    });
 }
 
 async function checkMetadata(contract, tokenId) {
@@ -236,6 +243,8 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     let auditedContract;
     let optimizedContract;
     let nftName;
+    let nftOwner;
+    let nftMinter;
     let metaUrl;
     let metaFieldsStandard;
     let metaIPFS;
@@ -290,6 +299,8 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
         }
 
         await getNftName(metaUrl).then(res => nftName = res);
+        await getNftOwner(contract, id).then(res => checkENSName(res).then(res => nftOwner = res));
+        await getTokenMintAddress(collectionAddress, id).then(res => checkENSName(res).then(res => nftMinter = res));
 
 
     }
@@ -298,8 +309,8 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     const obj = {
         "nft": {
             "id": 1, // Done
-            "name": nftName,
-            "created_by": "Beeple",
+            "name": nftName, // Done
+            "created_by": nftMinter, // Done
             "contract_address": collectionAddress, // Done
             "token_id": id, // Done
             "chain_id": 1, // Done
@@ -309,7 +320,7 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
             "collection_size": 6,
             "image_url": "https://...",
             "owner": {
-                "owner_name": "Christie's Auction House",
+                "owner_name": nftOwner, // Done
                 "purchase_date": "March 11, 2021",
                 "purchase_value": "$69,346,250 USD"
             }
