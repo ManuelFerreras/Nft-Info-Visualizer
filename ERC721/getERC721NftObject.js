@@ -125,7 +125,7 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     const contract = new web3.eth.Contract(ERC721Abi, collectionAddress);
     
     await checkIfComplies(contract).then(res => {
-        erc721compliant = res[0];
+        erc721compliant = res;
     });
 
     if(erc721compliant) {
@@ -184,4 +184,4 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
  
 }
 
-getNftInfoByCollectionAndId("0xA6A5eC7b1B8A34Ff2dcb2926b7c78f52A5ce3b90", 1);
+getNftInfoByCollectionAndId("0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", 2067);
