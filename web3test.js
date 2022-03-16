@@ -186,11 +186,6 @@ async function checkIfImageAvailable(metadataURL) {
         if('image' in res) {
             if(res['image'] != "") {
                 console.log("Image is Available.")
-                if(res['image'] != undefined && res['image'] != "" && res['image'].startsWith("ipfs://ipfs/")) {
-                    res['image'] = "https://ipfs.io/ipfs/" + res['image'].split("ipfs://ipfs/").pop();
-                } else if(res['image'] != undefined && res['image'] != "" && res['image'].startsWith("ipfs://")) {
-                    res['image'] = "https://ipfs.io/ipfs/" + res['image'].split("ipfs://").pop();
-                }
                 return res['image'];
             } else {
                 console.log("Image is not Available.")
@@ -235,7 +230,13 @@ async function getNftName(metadataURL) {
 async function checkIfImageIsSSL(metadataURL) {
     return await fetch(metadataURL).then(async res => res.json()).then(async res => {
         if('image' in res) {
-            if(res['image'].toLowerCase().startsWith("https://")) {
+            if(res['image'] != undefined && res['image'] != "" && res['image'].startsWith("ipfs://ipfs/")) {
+                console.log("Image Uses SSL");
+                return true;
+            } else if(res['image'] != undefined && res['image'] != "" && res['image'].startsWith("ipfs://")) {
+                console.log("Image Uses SSL");
+                return true;
+            } else if(res['image'].toLowerCase().startsWith("https://")) {
                 console.log("Image Uses SSL");
                 return true;
             } else {
