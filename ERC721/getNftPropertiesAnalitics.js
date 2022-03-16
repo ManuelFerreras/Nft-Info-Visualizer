@@ -363,46 +363,6 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
         await getNftName(metaUrl).then(res => nftName = res);  
     }
 
-    if(erc721compliant) {
-        obj = {
-            "nft": {
-                "id": 1, // Done
-                "name": nftName, // Done
-                "created_by": nftMinter, // Done
-                "contract_address": collectionAddress, // Done
-                "token_id": id, // Done
-                "chain_id": 1, // Done
-                "mint_timestamp": nftMintDate, // Done
-                "token_type": contractType, // Done
-                "edition_name": 0, // Done
-                "collection_size": 0, // Done
-                "image_url": metaImgAvailable, // Done
-                "owner": {
-                    "owner_name": nftOwner, // Done
-                    "last_transfer_date": nftLastTransferDate, // Done
-                    "purchase_value": "$0" // Done
-                }
-            }
-        }
-    } else if(erc1155compliant) {
-        obj = {
-            "nft": {
-                "id": 1, // Done
-                "name": nftName, // Done
-                "contract_address": collectionAddress, // Done
-                "token_id": id, // Done
-                "chain_id": 1, // Done
-                "token_type": contractType, // Done
-                "edition_name": 0, // Done
-                "collection_size": 0, // Done
-                "image_url": metaImgAvailable, // Done
-            }
-        }
-    } else {
-        obj = {}
-    }
-
-    console.log(obj);
  
 }
 
