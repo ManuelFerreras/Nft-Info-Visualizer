@@ -45,7 +45,7 @@ async function checkIfOptimized(collectionAddress) {
             } else if (res["result"][0]["OptimizationUsed"] == 0) {
                 return false;
             } else {
-                console.log("Contract is Not Verified");
+                return false;
             }
         });
     });

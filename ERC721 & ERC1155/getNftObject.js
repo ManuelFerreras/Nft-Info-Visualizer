@@ -103,7 +103,7 @@ async function checkIfOptimized(collectionAddress) {
             } else if (res["result"][0]["OptimizationUsed"] == 0) {
                 return false;
             } else {
-                console.log("Contract is Not Verified");
+                return false;;
             }
         });
     });
@@ -311,7 +311,7 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     });
 
     await checkIfOptimized(collectionAddress).then(res => {
-        console.log(res? "Contract is Optimized" : "Contract is Not Verified");
+        console.log(res? "Contract is Optimized" : "Contract is Not Optimized");
         optimizedContract = res;
     });
 
