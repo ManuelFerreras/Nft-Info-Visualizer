@@ -27,7 +27,9 @@ async function checkIfOpenSource(collectionAddress) {
 
 async function getContractSourceCode(collectionAddress) {
     return await fetch(`https://api.etherscan.io/api?module=contract&action=getsourcecode&address=${collectionAddress}&apikey=KXX4T9HFVXGFZ5ZV1B3MXXG7RSSKWRD3DC`).then(async res => {
-        await res.json().then(res => {return res["result"][0]["SourceCode"];});
+        return await res.json().then(res => {
+            return res["result"][0]["SourceCode"];
+        });
     })
 }
 
@@ -239,7 +241,7 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     console.log(metaImgIPFS? "Asset on IPFS: A" : "Asset on IPFS: F");
     console.log(metaImgSSL? "Asset Uses SSL: A" : "Asset Uses SSL: F");
 
-    // console.log(sourceCode); // Prints Contract Source Code
+    // console.log(sourceCode == undefined? "Source Code Error: Contract is not Verified" : sourceCode); // Prints Contract Source Code
 }
 
-getNftInfoByCollectionAndId("0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", 2067);
+getNftInfoByCollectionAndId("0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", 1);
