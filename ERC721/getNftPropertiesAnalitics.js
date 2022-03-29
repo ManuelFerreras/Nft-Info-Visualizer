@@ -175,13 +175,9 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
 
     const contract = new web3.eth.Contract(ERC721Abi, collectionAddress);
 
-    await checkIfOpenSource(collectionAddress).then(res => {
-        opensource = res;
-        console.log(res? 'Open Source: A' : 'Open Source: F');
-    }); 
-
     await getContractSourceCode(collectionAddress).then(res => {
         sourceCode = res;
+        console.log(sourceCode == undefined? "Open Source: F" : 'Open Source: A');
     });
 
     await checkIfComplies(contract).then(res => {
@@ -244,4 +240,4 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     // console.log(sourceCode == undefined? "Source Code Error: Contract is not Verified" : sourceCode); // Prints Contract Source Code
 }
 
-getNftInfoByCollectionAndId("0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", 1);
+getNftInfoByCollectionAndId("0x4c3334e831fb348dff73919338066eb82614ced8", 1);
