@@ -226,4 +226,4 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
 
 }
 
-getNftInfoByCollectionAndId("0xF7c5660c64aa7A8A4c1c3ff1aA774d19C5dC2A64", 1);
+getNftInfoByCollectionAndId("0xFDfB369d9910D16F7357BB6b18A6Fc4CbA6dc871", 1);
