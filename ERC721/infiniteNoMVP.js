@@ -23,9 +23,17 @@ async function getContractSourceCode(collectionAddress) {
     })
 }
 
+async function getTokenMintGasSpent(collectionAddress, tokenId) { // We filter the first transfer tx of the given Nft Id, from address(0), and then we retrieve the tx timestamp.
+    return await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", "0x0000000000000000000000000000000000000000000000000000000000000000", "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
+    .then(json => {
+        return(web3.utils.hexToNumber(json["result"][0]["gasUsed"]));
+    }).catch(err => console.log("Nft Gas Spent Error: " + err));
+}
+
 async function getNftInfoByCollectionAndId(collectionAddress, id) {
     let sourceCode;
     let securityCounter = 0;
+    let mintGas;
 
     const contract = new web3.eth.Contract(ERC721Abi, collectionAddress);
 
@@ -41,6 +49,10 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
 
     const isContract = await web3.eth.getCode(await contract.methods.owner().call());
     console.log(isContract == "0x"? "Smart contract owner is multi-sig: F" : "Smart contract owner is multi-sig: A");
+
+    mintGas = await getTokenMintGasSpent(collectionAddress, id);
+
+    console.log("Gas spent per mint: " + mintGas);
     
 }
 

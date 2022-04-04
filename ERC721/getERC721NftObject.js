@@ -28,6 +28,7 @@ async function getLastTransferTimestamp(collectionAddress, tokenId) { // We filt
 async function getTokenMintAddress(collectionAddress, tokenId) { // We filter the first transfer tx of the given Nft Id, from address(0), and then we retrieve the "to" field.
     return await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", "0x0000000000000000000000000000000000000000000000000000000000000000", "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
     .then(json => {
+        console.log(json["result"][0]);
         return(web3.utils.toHex(web3.utils.hexToNumberString(json["result"][0]["topics"][2])));
     }).catch(err => console.log("Nft Minter Error: " + err));
 }
