@@ -233,39 +233,42 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
 
 
             let metaCID;
-            
-            if(metaImgAvailable != undefined && metaImgAvailable != "") {
-                metaCID = metaImgAvailable.split("/").pop();
+
+            if(metaImgAvailable != undefined && metaImgAvailable != "" && metaImgAvailable.startsWith("ipfs://ipfs/")) {
+                metaCID = metaImgAvailable.split("/")[3];
+            } else if(metaImgAvailable != undefined && metaImgAvailable != "" && metaImgAvailable.startsWith("ipfs://")) {
+                metaCID = metaImgAvailable.split("/")[2];
             } else if(metaImgAvailable != undefined && metaImgAvailable != "") {
                 metaCID = metaImgAvailable.split("/").pop();
             }
+
 
             if(metaImgAvailable != undefined && metaImgAvailable != "" && metaImgAvailable.startsWith("ipfs://ipfs/")) {
                 metaImgAvailable = "https://ipfs.io/ipfs/" + metaImgAvailable.split("ipfs://ipfs/").pop();
             } else if(metaImgAvailable != undefined && metaImgAvailable != "" && metaImgAvailable.startsWith("ipfs://")) {
                 metaImgAvailable = "https://ipfs.io/ipfs/" + metaImgAvailable.split("ipfs://").pop();
-            }
+            } 
+            console.log(metaCID);
+            metaCID = metaCID;
 
-            
-            const ipfs = await create();
-            
-            
-            const cid = new CID('QmdKcc3ETD4Xy2f8fJZSNvtfcBfk5sxyMqQthSGn6wEXe1');
 
-            const providers = ipfs.dht.findProvs('QmdPAhQRxrDKqkGPvQzBvjYe3kU8kiEEAd2J6ETEamKAD9')
+            const ipfs = await create();    
 
-            for await (const provider of providers) {
-                console.log(provider.id.toString())
-            }
 
-            console.log(provs);
-
+            const { cid } = await ipfs.add(metaCID);
+            const providers = ipfs.dht.findProvs(cid, {"numProviders": 10000, "timeout": 10000000});
 
             console.log(providers);
 
-            console.log(await ipfs.bitswap.stat());
+            for await (const provider of providers) {
+                if(provider['name'] == 'PROVIDER') {
+                    console.log(provider)
+                }
+            }
 
-            type = await FileType.fromStream(toStream(ipfs.cat(cid, {
+
+            metaCID = new CID(metaCID);
+            type = await FileType.fromStream(toStream(ipfs.cat(metaCID, {
                 length: 100 // or however many bytes you need
             })));            
 
@@ -332,6 +335,6 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
 
 }
 
-getNftInfoByCollectionAndId("0xad4d85257c815a4b2c7088a664e958b035b24323", 1);
+getNftInfoByCollectionAndId("0x7A676bE8344A282Be2cfCe69d172B11aC2FBd812", 1);
 
 
