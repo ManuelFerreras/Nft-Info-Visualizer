@@ -1,7 +1,15 @@
-var Web3 = require("web3");
-var api = require('etherscan-api').init('KXX4T9HFVXGFZ5ZV1B3MXXG7RSSKWRD3DC');
-var fetch = require('node-fetch');
-var ENS = require('ethereum-ens');
+/* References
+
+Definitions:
+
+  - SC: Smart Contract
+
+*/
+
+// Modules
+const Web3 = require("web3");
+const api = require('etherscan-api').init('KXX4T9HFVXGFZ5ZV1B3MXXG7RSSKWRD3DC');
+const fetch = require('node-fetch');
 const toStream = require('it-to-stream');
 const FileType = require('file-type');
 const { create, globSource } = require('ipfs');
@@ -16,11 +24,9 @@ const web3 = new Web3(new Web3.providers.HttpProvider(ethNetwork));
 
 // Info
 const ERC721Abi = [{"inputs":[{"internalType":"string","name":"baseURI","type":"string"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"ApprovalCallerNotOwnerNorApproved","type":"error"},{"inputs":[],"name":"ApprovalQueryForNonexistentToken","type":"error"},{"inputs":[],"name":"ApprovalToCurrentOwner","type":"error"},{"inputs":[],"name":"ApproveToCaller","type":"error"},{"inputs":[],"name":"BalanceQueryForZeroAddress","type":"error"},{"inputs":[],"name":"MintToZeroAddress","type":"error"},{"inputs":[],"name":"MintZeroQuantity","type":"error"},{"inputs":[],"name":"OwnerIndexOutOfBounds","type":"error"},{"inputs":[],"name":"OwnerQueryForNonexistentToken","type":"error"},{"inputs":[],"name":"TokenIndexOutOfBounds","type":"error"},{"inputs":[],"name":"TransferCallerNotOwnerNorApproved","type":"error"},{"inputs":[],"name":"TransferFromIncorrectOwner","type":"error"},{"inputs":[],"name":"TransferToNonERC721ReceiverImplementer","type":"error"},{"inputs":[],"name":"TransferToZeroAddress","type":"error"},{"inputs":[],"name":"URIQueryForNonexistentToken","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"approved","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":false,"internalType":"bool","name":"approved","type":"bool"}],"name":"ApprovalForAll","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"totalMinted","type":"uint256"}],"name":"Minted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Transfer","type":"event"},{"inputs":[],"name":"MAX_SUPPLY","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"approve","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_newPrice","type":"uint256"}],"name":"changePrice","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"flipSale","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"getApproved","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"operator","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_to","type":"address"},{"internalType":"uint256","name":"_count","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ownerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"price","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"bytes","name":"_data","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"saleOpen","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"bool","name":"approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"baseURI","type":"string"}],"name":"setBaseURI","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"index","type":"uint256"}],"name":"tokenByIndex","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"uint256","name":"index","type":"uint256"}],"name":"tokenOfOwnerByIndex","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"transferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}];
-const ERC1155Abi = [{"inputs":[{"internalType":"string","name":"uri_","type":"string"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"account","type":"address"},{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":false,"internalType":"bool","name":"approved","type":"bool"}],"name":"ApprovalForAll","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256[]","name":"ids","type":"uint256[]"},{"indexed":false,"internalType":"uint256[]","name":"values","type":"uint256[]"}],"name":"TransferBatch","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"id","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"TransferSingle","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"value","type":"string"},{"indexed":true,"internalType":"uint256","name":"id","type":"uint256"}],"name":"URI","type":"event"},{"inputs":[{"internalType":"address","name":"account","type":"address"},{"internalType":"uint256","name":"id","type":"uint256"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address[]","name":"accounts","type":"address[]"},{"internalType":"uint256[]","name":"ids","type":"uint256[]"}],"name":"balanceOfBatch","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"},{"internalType":"address","name":"operator","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256[]","name":"ids","type":"uint256[]"},{"internalType":"uint256[]","name":"amounts","type":"uint256[]"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"safeBatchTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"id","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"bool","name":"approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"uri","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}];
-
 const SecurityLibraries = ["contract ERC20", "interface IERC20", "library SafeERC20", "contract TokenTimelock", "interface IERC20Metadata", "abstract contract ERC20Wrapper", "abstract contract ERC20VotesComp", "abstract contract ERC20Votes", "abstract contract ERC20Snapshot", "abstract contract ERC20Pausable", "abstract contract ERC20FlashMint", "abstract contract ERC20Capped", "abstract contract ERC20Burnable", "interface IERC721Receiver", "interface IERC721", "contract ERC721", "contract ERC721Holder", "interface IERC721Metadata", "interface IERC721Enumerable", "abstract contract ERC721URIStorage", "abstract contract ERC721Royalty", "abstract contract ERC721Pausable", "abstract contract ERC721Enumerable", "abstract contract ERC721Burnable", "interface IERC1155Receiver", "interface IERC1155", "contract ERC1155", "abstract contract ERC1155Receiver", "contract ERC1155Holder", "interface IERC1155MetadataURI", "abstract contract ERC1155URIStorage", "abstract contract ERC1155Supply", "abstract contract ERC1155Pausable", "abstract contract ERC1155Burnable", "library Timers", "library Strings", "library StorageSlot", "abstract contract Multicall", "library Create2", "library Counters", "abstract contract Context", "library Checkpoints", "library Base64", "library Arrays", "library Address", "library EnumerableSet", "library EnumerableMap", "library DoubleEndedQueue", "library BitMaps", "library SignedSafeMath", "library SignedMath", "library SafeMath", "library SafeMath", "library Math", "interface IERC1820Registry", "interface IERC1820Implementer", "interface IERC165", "contract ERC1820Implementer", "abstract contract ERC165Storage", "library ERC165Checker", "abstract contract ERC165", "contract RefundEscrow", "contract Escrow", "abstract contract ConditionalEscrow", "abstract contract EIP712", "library SignatureChecker", "library MerkleProof", "library ECDSA", "abstract contract ReentrancyGuard", "abstract contract PullPayment", "abstract contract Pausable", "abstract contract Proxy", "library Clones", "abstract contract UUPSUpgradeable", "abstract contract Initializable", "contract TransparentUpgradeableProxy", "contract ProxyAdmin", "contract TransparentUpgradeableProxy", "contract ProxyAdmin", "contract UpgradeableBeacon", "interface IBeacon", "contract BeaconProxy", "abstract contract ERC1967Upgrade", "contract ERC1967Proxy", "contract MinimalForwarder", "abstract contract ERC2771Context", "contract TimelockController", "abstract contract IGovernor", "abstract contract Governor", "abstract contract Votes", "interface IVotes", "abstract contract IGovernorTimelock", "abstract contract GovernorVotesQuorumFraction", "abstract contract GovernorVotesComp", "abstract contract GovernorVotes", "abstract contract GovernorTimelockControl", "abstract contract GovernorTimelockCompound", "abstract contract GovernorSettings", "abstract contract GovernorProposalThreshold", "abstract contract GovernorPreventLateQuorum", "abstract contract GovernorCountingSimple", "abstract contract IGovernorCompatibilityBravo", "abstract contract GovernorCompatibilityBravo", "contract VestingWallet", "contract PaymentSplitter", "abstract contract CrossChainEnabled", "abstract contract CrossChainEnabledPolygonChild", "library LibOptimism", "abstract contract CrossChainEnabledOptimism", "library LibArbitrumL2", "library LibArbitrumL1", "abstract contract CrossChainEnabledArbitrumL2", "abstract contract CrossChainEnabledArbitrumL1", "library LibAMB", "contract CrossChainEnabledAMB", "abstract contract Ownable", "interface IAccessControlEnumerable", "interface IAccessControl", "abstract contract AccessControlEnumerable", "abstract contract AccessControlCrossChain", "abstract contract AccessControl"];
 
-
+ 
 // Snippets
 async function downloadImage(url, filepath) {
     return await download.image({
@@ -37,7 +43,7 @@ async function getContractSourceCode(collectionAddress) {
     })
 }
 
-async function checkIfComplies(contract) { // Returns a bool.
+async function checkIfComplies(contract) {
     return await contract.methods.supportsInterface("0x80ac58cd").call().then(async res => {
         if(!res) {
            return false;
@@ -163,125 +169,205 @@ async function checkIfImageIsSSL(metadataURL) {
     }).catch(err => console.log("Image SSL Error"));
 }
 
+async function getTokenMintGasSpent(collectionAddress, tokenId) { 
+    return await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", "0x0000000000000000000000000000000000000000000000000000000000000000", "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
+    .then(json => {
+        return web3.utils.hexToNumber(json["result"][0]["gasUsed"]);
+    }).catch(err => console.log("Nft Mint Gas Spent Error: " + err));
+}
+
+async function getTokenTransferGasSpent(collectionAddress, tokenId) { 
+    return await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", undefined, "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
+    .then(json => {
+        
+        // Check if any transfer from any address different to address(0) has been made.
+        let transfer = json["result"].filter(obj => obj["topics"][1] != '0x0000000000000000000000000000000000000000000000000000000000000000');
+        if (transfer.length == 0 && json["result"].length > 0) transfer = json["result"];
+
+        return web3.utils.hexToNumber(transfer[transfer.length - 1]["gasUsed"]);
+    }).catch(err => console.log("Nft Transfer Gas Spent Error: " + err));
+}
+
+async function getContractCreationGasSpent(collectionAddress) {
+    return await api.account.txlist(collectionAddress, 0, 99999999,'asc')
+    .then(json => {
+        return json["result"][0]["gasUsed"];
+    })
+    .catch(err => console.log("Contract Creation Gas Spent Error: " + err)); 
+}
+
+async function checkLibraries(libraries, sourceCode) {
+    let counter;
+
+    libraries.map(val => {
+        sourceCode.includes(val)? counter++ : counter;
+    });
+}
+
+async function isMultiSig(contract) {
+
+    let ownerAddress = await contract.methods.owner().call();
+    return await web3.eth.getCode(ownerAddress);
+
+}
+
 
 async function getNftInfoByCollectionAndId(collectionAddress, id) {
+    // Local Variables
     let erc721compliant;
     let auditedContract;
     let optimizedContract;
+    let securityCounter = 0;
+
     let metaUrl;
     let metaImgAvailable;
-    let sourceCode;
-    let securityCounter = 0;
     let metadataLatency;
     let mediaLatency;
     let type;
     let dimensions;
+    let metaExt;
+    let metaCID;
 
-    const contract = new web3.eth.Contract(ERC721Abi, collectionAddress);
-    const isContract = await web3.eth.getCode(await contract.methods.owner().call());
+    let sourceCode;
+    let contract;
+    let isContract;
+    
+    let mintGas;
+    let contractCreationGas;
+    let transferGas;
 
-    await getContractSourceCode(collectionAddress).then(res => {
-        sourceCode = res;
-    });
 
-    SecurityLibraries.map(val => {
-        sourceCode.includes(val)? securityCounter++ : securityCounter;
-    });
+    // Just to measure analysis time.
+    let analysisStartTime = Date.now();
 
-    await checkIfComplies(contract).then(res => {
-        erc721compliant = res;
-    });
 
-    await checkIfAudited(collectionAddress).then(res => {
-        auditedContract = res;
-    });
+    // New contract instance.
+    contract = new web3.eth.Contract(ERC721Abi, collectionAddress);
 
-    await checkIfOptimized(collectionAddress).then(res => {
-        optimizedContract = res;
-    });
+
+    // Checks if SC owner is a contract, used for multisig verification.
+    isContract = await isMultiSig(contract).catch(console.log);
+
+
+    // Gets SC source code.
+    sourceCode = await getContractSourceCode(collectionAddress).catch(console.log);
+
+
+    // Gets the amount of verified libraries this SC use.
+    securityCounter = await checkLibraries(SecurityLibraries, sourceCode).catch(console.log);
+    
+
+    // Gas Spent a SC Creation.
+    contractCreationGas = await getContractCreationGasSpent(collectionAddress).catch(console.log);
+    
+
+    // Gas Spent o Nft Mint.
+    mintGas = await getTokenMintGasSpent(collectionAddress, id).catch(console.log);
+    
+
+    // Gas Spent o Nft Transfer.
+    transferGas = await getTokenTransferGasSpent(collectionAddress, id).catch(console.log);
+
+
+    // Checks if SC is ERC721.
+    erc721compliant = await checkIfComplies(contract).catch(console.log);
+
+
+    // Checks if SC is Audited.
+    auditedContract = await checkIfAudited(collectionAddress).catch(console.log);
+
+
+    // Checks if SC is optimized.
+    optimizedContract = await checkIfOptimized(collectionAddress).catch(console.log);
 
     if(erc721compliant) {
-        await checkMetadata(contract, id).then(res => metaUrl = res).catch(console.log);
+        metaUrl = await checkMetadata(contract, id).catch(console.log);
     }
 
+
+    // Checks if metadata url is from IPFS, and if it is, it creates an SSL url.
     if(metaUrl != undefined && metaUrl != "" && metaUrl.startsWith("ipfs://ipfs/")) {
         metaUrl = "https://ipfs.io/ipfs/" + metaUrl.split("ipfs://ipfs/").pop();
     } else if(metaUrl != undefined && metaUrl != "" && metaUrl.startsWith("ipfs://")) {
         metaUrl = "https://ipfs.io/ipfs/" + metaUrl.split("ipfs://").pop();
     }
 
+
     if(metaUrl != undefined && metaUrl != "" && metaUrl.startsWith("http")) {
 
+        // Ping for metadata get request.
         var start = Date.now();
-        await checkMetadata(contract, id).then(() => {
-            metadataLatency = Date.now() - start;
-        });
+        await checkMetadata(contract, id).then(() => metadataLatency = Date.now() - start);
         
-        await checkMetadataFields(metaUrl).then(res => metaFieldsStandard = res);  
-        await checkIfIPFSMetadata(metaUrl).then(res => metaIPFS = res);    
-        await checkUrlSSL(metaUrl).then(res => metaSSL = res);
+
+        // Checks if metadata follows the OpenSea metadata standard.
+        metaFieldsStandard = await checkMetadataFields(metaUrl).catch(console.log); 
+        
+        
+        // Checks if metadata is uploaded to IPFS.
+        metaIPFS = await checkIfIPFSMetadata(metaUrl).catch(console.log);  
+        
+        
+        // Checks if metadata use SSL protocol.
+        metaSSL = await checkUrlSSL(metaUrl).catch(console.log);
 
 
-        await checkIfImageAvailable(metaUrl).then(res => metaImgAvailable = res);
+        // Checks if metadata contains an image property.
+        metaImgAvailable = await checkIfImageAvailable(metaUrl).catch(console.log);
         
+
         if (metaImgAvailable != false) {
-            let metaExt;
 
+            // Gets file extension if possible, from url.
             if(metaImgAvailable != undefined && metaImgAvailable != "") {
                 metaExt = path.extname(metaImgAvailable);
             }
 
 
-            let metaCID;
-
+            // Gets the metadata CID if possible, from img url.
             if(metaImgAvailable != undefined && metaImgAvailable != "" && metaImgAvailable.startsWith("ipfs://ipfs/")) {
                 metaCID = metaImgAvailable.split("/")[3];
             } else if(metaImgAvailable != undefined && metaImgAvailable != "" && metaImgAvailable.startsWith("ipfs://")) {
                 metaCID = metaImgAvailable.split("/")[2];
-            } else if(metaImgAvailable != undefined && metaImgAvailable != "") {
-                metaCID = metaImgAvailable.split("/").pop();
             }
 
 
+            // Converts image url to an https url if possible.
             if(metaImgAvailable != undefined && metaImgAvailable != "" && metaImgAvailable.startsWith("ipfs://ipfs/")) {
                 metaImgAvailable = "https://ipfs.io/ipfs/" + metaImgAvailable.split("ipfs://ipfs/").pop();
             } else if(metaImgAvailable != undefined && metaImgAvailable != "" && metaImgAvailable.startsWith("ipfs://")) {
                 metaImgAvailable = "https://ipfs.io/ipfs/" + metaImgAvailable.split("ipfs://").pop();
             } 
-            console.log(metaCID);
-            metaCID = metaCID;
 
 
-            const ipfs = await create();    
-
-
-            const { cid } = await ipfs.add(metaCID);
-            const providers = ipfs.dht.findProvs(cid, {"numProviders": 10000, "timeout": 10000000});
-
-            console.log(providers);
-
-            for await (const provider of providers) {
-                if(provider['name'] == 'PROVIDER') {
-                    console.log(provider)
-                }
+            // In case it was not possible to get the metadata extension before, it gets it from ipfs api, if possible.
+            if(metaExt == "") {
+                const ipfs = await create();    
+                metaCID = new CID(metaCID);
+                type = await FileType.fromStream(toStream(ipfs.cat(metaCID, {
+                    length: 100 // or however many bytes you need
+                })));            
             }
 
 
-            metaCID = new CID(metaCID);
-            type = await FileType.fromStream(toStream(ipfs.cat(metaCID, {
-                length: 100 // or however many bytes you need
-            })));            
-
+            // Gets the size of the metadata image.
             await downloadImage(metaImgAvailable, "../../image.png");
             dimensions = sizeOf('../image.png');
             
 
+            // Checks if the image is uploaded to ipfs.
+            metaImgIPFS = await checkIfImageIsIPFS(metaUrl).catch(console.log);
 
-            await checkIfImageIsIPFS(metaUrl).then(res => metaImgIPFS = res);
-            await checkIfImageIsSSL(metaUrl).then(res => metaImgSSL = res);
 
+            // Checks if the image host uses SSL protocol.
+            metaImgSSL = await checkIfImageIsSSL(metaUrl).catch(console.log);
+
+
+            // Pings the metadata image.
             start = Date.now();
             await fetch(metaImgAvailable).then(() => mediaLatency = Date.now());
+
+        
         } else {
             metaImgIPFS = false;
             metaImgSSL = false;
@@ -320,16 +406,24 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     console.log(metadataLatency < 100? "Metadata Latency: A" : 'Metadata Latency: F');
     console.log(mediaLatency < 100? "Media Latency: A" : 'Media Latency: F');
 
+    console.log("Gas spent on smart contract creation: " + contractCreationGas);
+    console.log("Gas spent per mint: " + mintGas);
+    console.log("Gas spent per transfer: " + transferGas);
+
 
     console.log('--------------------------------------------------------');
 
 
-    // Delete temp image.
+    // Deletes temp image.
     try {
         fs.unlinkSync('../image.png')
     } catch(err) {
         console.error(err)
     }
+
+
+    console.log("The execution time for this analysis was: " + Date.now() - analysisStartTime);
+
 
     process.exit(1);
 

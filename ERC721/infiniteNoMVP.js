@@ -15,7 +15,7 @@ const SecurityLibraries = ["contract ERC20", "interface IERC20", "library SafeER
 
 
 // Snippets
-async function getContractSourceCode(collectionAddress) {
+async function getContractSourceCode(collectionAddress) { // Implemented
     return await fetch(`https://api.etherscan.io/api?module=contract&action=getsourcecode&address=${collectionAddress}&apikey=KXX4T9HFVXGFZ5ZV1B3MXXG7RSSKWRD3DC`).then(async res => {
         return await res.json().then(res => {
             return res["result"][0]["SourceCode"];
@@ -23,25 +23,26 @@ async function getContractSourceCode(collectionAddress) {
     })
 }
 
-async function getTokenMintGasSpent(collectionAddress, tokenId) { 
+async function getTokenMintGasSpent(collectionAddress, tokenId) { // Implemented
     return await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", "0x0000000000000000000000000000000000000000000000000000000000000000", "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
     .then(json => {
         return web3.utils.hexToNumber(json["result"][0]["gasUsed"]);
     }).catch(err => console.log("Nft Mint Gas Spent Error: " + err));
 }
 
-async function getTokenTransferGasSpent(collectionAddress) { 
-    return await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", undefined, "AND", undefined, "AND", undefined)
+async function getTokenTransferGasSpent(collectionAddress, tokenId) { // Implemented
+    return await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", undefined, "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
     .then(json => {
-        let transfer;
-        console.log(json["result"][1000]["topics"]);
-        transfer = json["result"].filter(obj => obj["topics"][1] != '0x0000000000000000000000000000000000000000000000000000000000000000');
-        console.log(transfer);
-        return web3.utils.hexToNumber(json["result"][json["result"].length - 1]["gasUsed"]);
+
+        // Check if any transfer from any address different to address(0) has been made.
+        let transfer = json["result"].filter(obj => obj["topics"][1] != '0x0000000000000000000000000000000000000000000000000000000000000000');
+        if (transfer.length == 0 && json["result"].length > 0) transfer = json["result"];
+
+        return web3.utils.hexToNumber(transfer[transfer.length - 1]["gasUsed"]);
     }).catch(err => console.log("Nft Transfer Gas Spent Error: " + err));
 }
 
-async function getContractCreationGasSpent(collectionAddress) {
+async function getContractCreationGasSpent(collectionAddress) { // Implemented
     return await api.account.txlist(collectionAddress, 0, 99999999,'asc')
     .then(json => {
         return json["result"][0]["gasUsed"];
@@ -56,38 +57,36 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     let contractCreationGas;
     let transferGas;
 
-    const contract = new web3.eth.Contract(ERC721Abi, collectionAddress);
-
 
     // Check Libraries in SourceCode
-    await getContractSourceCode(collectionAddress).then(res => {
-        sourceCode = res;
-    });
-    SecurityLibraries.map(val => {
-        sourceCode.includes(val)? securityCounter++ : securityCounter;
-    });
-    console.log(securityCounter == 0? "Using well-established libraries: F" : securityCounter == 1? "Using well-established libraries: E" : securityCounter == 2? "Using well-established libraries: D" : securityCounter == 3? "Using well-established libraries: C" : securityCounter == 4? "Using well-established libraries: B" : "Using well-established libraries: A");
+    // await getContractSourceCode(collectionAddress).then(res => {
+    //    sourceCode = res;
+    // });
+    // SecurityLibraries.map(val => {
+    //    sourceCode.includes(val)? securityCounter++ : securityCounter;
+    // });
+    // console.log(securityCounter == 0? "Using well-established libraries: F" : securityCounter == 1? "Using well-established libraries: E" : securityCounter == 2? "Using well-established libraries: D" : securityCounter == 3? "Using well-established libraries: C" : securityCounter == 4? "Using well-established libraries: B" : "Using well-established libraries: A");
 
 
     // Check if owner is a contract.
-    const isContract = await web3.eth.getCode(await contract.methods.owner().call());
-    console.log(isContract == "0x"? "Smart contract owner is multi-sig: F" : "Smart contract owner is multi-sig: A");
+    // const isContract = await web3.eth.getCode(await contract.methods.owner().call());
+    // console.log(isContract == "0x"? "Smart contract owner is multi-sig: F" : "Smart contract owner is multi-sig: A");
 
     
     // Gas Spent on Contract Creation.
-    contractCreationGas = await getContractCreationGasSpent(collectionAddress).catch(console.log);
-    console.log("Gas spent on smart contract creation: " + contractCreationGas);
+    // contractCreationGas = await getContractCreationGasSpent(collectionAddress).catch(console.log);
+    // console.log("Gas spent on smart contract creation: " + contractCreationGas);
 
 
     // Gas Spent on Nft Mint.
-    mintGas = await getTokenMintGasSpent(collectionAddress, id).catch(console.log);
-    console.log("Gas spent per mint: " + mintGas);
+    // mintGas = await getTokenMintGasSpent(collectionAddress, id).catch(console.log);
+    // console.log("Gas spent per mint: " + mintGas);
 
 
     // Gas Spent on Nft Transfer.
-    transferGas = await getTokenTransferGasSpent(collectionAddress).catch(console.log);
+    transferGas = await getTokenTransferGasSpent(collectionAddress, id).catch(console.log);
     console.log("Gas spent per transfer: " + transferGas);
     
 }
 
-getNftInfoByCollectionAndId("0xDBCab7A768EA9a00B2fFA5A2eB387cAD609E2114", 2374);
+getNftInfoByCollectionAndId("0xbcE6D2aa86934AF4317AB8615F89E3F9430914Cb", 12834);
