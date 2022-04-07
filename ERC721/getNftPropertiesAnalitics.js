@@ -184,7 +184,8 @@ async function getTokenTransferGasSpent(collectionAddress, tokenId) {
         let transfer = json["result"].filter(obj => obj["topics"][1] != '0x0000000000000000000000000000000000000000000000000000000000000000');
         if (transfer.length == 0 && json["result"].length > 0) transfer = json["result"];
 
-        return web3.utils.hexToNumber(transfer[transfer.length - 1]["gasUsed"]);
+        console.log(transfer);
+        return web3.utils.hexToNumber(transfer[0]["gasUsed"]);
     }).catch(err => console.log("Nft Transfer Gas Spent Error: " + err));
 }
 
@@ -239,49 +240,62 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
 
     // Just to measure analysis time.
     let analysisStartTime = Date.now();
+    console.log("Analysis Start Time: " + analysisStartTime);
 
 
     // New contract instance.
     contract = new web3.eth.Contract(ERC721Abi, collectionAddress);
+    console.log("Contract creation.");
 
 
     // Checks if SC owner is a contract, used for multisig verification.
     isContract = await isMultiSig(contract).catch(console.log);
+    console.log("Owner multisig verification done.");
 
 
     // Gets SC source code.
     sourceCode = await getContractSourceCode(collectionAddress).catch(console.log);
+    console.log("Contract Source code get.");
 
 
     // Gets the amount of verified libraries this SC use.
     securityCounter = await checkLibraries(SecurityLibraries, sourceCode).catch(console.log);
+    console.log("Contract security count done.");
     
 
     // Gas Spent a SC Creation.
     contractCreationGas = await getContractCreationGasSpent(collectionAddress).catch(console.log);
+    console.log("Contract creation gas calculated.");
     
 
     // Gas Spent o Nft Mint.
     mintGas = await getTokenMintGasSpent(collectionAddress, id).catch(console.log);
+    console.log("Token mint gas calculated.");
     
 
     // Gas Spent o Nft Transfer.
     transferGas = await getTokenTransferGasSpent(collectionAddress, id).catch(console.log);
+    console.log("Token transfer gas calculated.");
 
 
     // Checks if SC is ERC721.
     erc721compliant = await checkIfComplies(contract).catch(console.log);
+    console.log("ERC721 compliant checked.");
 
 
     // Checks if SC is Audited.
     auditedContract = await checkIfAudited(collectionAddress).catch(console.log);
+    console.log("Contract audit checked.");
 
 
     // Checks if SC is optimized.
     optimizedContract = await checkIfOptimized(collectionAddress).catch(console.log);
+    console.log("Contract optimization checked.");
+
 
     if(erc721compliant) {
         metaUrl = await checkMetadata(contract, id).catch(console.log);
+        console.log("Metadata Url get.");
     }
 
 
@@ -291,29 +305,35 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     } else if(metaUrl != undefined && metaUrl != "" && metaUrl.startsWith("ipfs://")) {
         metaUrl = "https://ipfs.io/ipfs/" + metaUrl.split("ipfs://").pop();
     }
+    console.log("Metadata formated.");
 
 
     if(metaUrl != undefined && metaUrl != "" && metaUrl.startsWith("http")) {
 
         // Ping for metadata get request.
-        var start = Date.now();
-        await checkMetadata(contract, id).then(() => metadataLatency = Date.now() - start);
+        var start = Date.now() / 1000;
+        await checkMetadata(contract, id).then(() => metadataLatency = Date.now() / 1000 - start);
+        console.log("Metadata ping done.");
         
 
         // Checks if metadata follows the OpenSea metadata standard.
         metaFieldsStandard = await checkMetadataFields(metaUrl).catch(console.log); 
+        console.log("Metadataa fields checked.");
         
         
         // Checks if metadata is uploaded to IPFS.
         metaIPFS = await checkIfIPFSMetadata(metaUrl).catch(console.log);  
+        console.log("Metadata in IPFS checked.");
         
         
         // Checks if metadata use SSL protocol.
         metaSSL = await checkUrlSSL(metaUrl).catch(console.log);
+        console.log("Metadata SSL checked.");
 
 
         // Checks if metadata contains an image property.
         metaImgAvailable = await checkIfImageAvailable(metaUrl).catch(console.log);
+        console.log("Metadata Image checked.");
         
 
         if (metaImgAvailable != false) {
@@ -321,6 +341,7 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
             // Gets file extension if possible, from url.
             if(metaImgAvailable != undefined && metaImgAvailable != "") {
                 metaExt = path.extname(metaImgAvailable);
+                console.log("Metadata file extension checked.");
             }
 
 
@@ -330,6 +351,7 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
             } else if(metaImgAvailable != undefined && metaImgAvailable != "" && metaImgAvailable.startsWith("ipfs://")) {
                 metaCID = metaImgAvailable.split("/")[2];
             }
+            console.log("CID checked.");
 
 
             // Converts image url to an https url if possible.
@@ -338,6 +360,7 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
             } else if(metaImgAvailable != undefined && metaImgAvailable != "" && metaImgAvailable.startsWith("ipfs://")) {
                 metaImgAvailable = "https://ipfs.io/ipfs/" + metaImgAvailable.split("ipfs://").pop();
             } 
+            console.log("Mata Image Url get.");
 
 
             // In case it was not possible to get the metadata extension before, it gets it from ipfs api, if possible.
@@ -346,26 +369,31 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
                 metaCID = new CID(metaCID);
                 type = await FileType.fromStream(toStream(ipfs.cat(metaCID, {
                     length: 100 // or however many bytes you need
-                })));            
+                })));     
+                console.log("Metadata field extension get.");       
             }
 
 
             // Gets the size of the metadata image.
             await downloadImage(metaImgAvailable, "../../image.png");
             dimensions = sizeOf('../image.png');
+            console.log("Downloaded and checked image dimensions.");
             
 
             // Checks if the image is uploaded to ipfs.
             metaImgIPFS = await checkIfImageIsIPFS(metaUrl).catch(console.log);
+            console.log("Meta image in IPFS checked.");
 
 
             // Checks if the image host uses SSL protocol.
             metaImgSSL = await checkIfImageIsSSL(metaUrl).catch(console.log);
+            console.log("Meta image SSL checked.");
 
 
             // Pings the metadata image.
-            start = Date.now();
-            await fetch(metaImgAvailable).then(() => mediaLatency = Date.now());
+            start = Date.now() / 1000;
+            await fetch(metaImgAvailable).then(() => mediaLatency = Date.now() / 1000 - start);
+            console.log("Meta image ping calculated.");
 
         
         } else {
@@ -383,7 +411,7 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     }
 
     console.log('\n\n\n');
-    console.log('-------------------- Report Results --------------------');
+    console.log('-------------------- Report Results --------------------\n');
 
 
     console.log(sourceCode == undefined || sourceCode.length == 0? "Open Source: F" : 'Open Source: A');
@@ -411,6 +439,7 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     console.log("Gas spent per transfer: " + transferGas);
 
 
+    console.log("\n");
     console.log('--------------------------------------------------------');
 
 
@@ -422,13 +451,13 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     }
 
 
-    console.log("The execution time for this analysis was: " + Date.now() - analysisStartTime);
+    await console.log("Duration from Analysis: ", (Date.now() - analysisStartTime) / 1000);
 
 
     process.exit(1);
 
 }
 
-getNftInfoByCollectionAndId("0x7A676bE8344A282Be2cfCe69d172B11aC2FBd812", 1);
+getNftInfoByCollectionAndId("0x7A676bE8344A282Be2cfCe69d172B11aC2FBd812", 102);
 
 
