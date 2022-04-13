@@ -184,7 +184,6 @@ async function getTokenTransferGasSpent(collectionAddress, tokenId) {
         let transfer = json["result"].filter(obj => obj["topics"][1] != '0x0000000000000000000000000000000000000000000000000000000000000000');
         if (transfer.length == 0 && json["result"].length > 0) transfer = json["result"];
 
-        console.log(transfer);
         return web3.utils.hexToNumber(transfer[0]["gasUsed"]);
     }).catch(err => console.log("Nft Transfer Gas Spent Error: " + err));
 }
@@ -236,6 +235,16 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     let mintGas;
     let contractCreationGas;
     let transferGas;
+
+    const dir = './jsipfs';
+    // delete directory recursively
+    try {
+        await fs.rmdirSync(dir, { recursive: true });
+
+        console.log(`${dir} was deleted!`);
+    } catch (err) {
+        console.log(`Error while trying to delete ${dir}.`);
+    }
 
 
     // Just to measure analysis time.
@@ -365,12 +374,18 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
 
             // In case it was not possible to get the metadata extension before, it gets it from ipfs api, if possible.
             if(metaExt == "") {
-                const ipfs = await create();    
+                const ipfs = await create({
+                    repo: './jsipfs'
+                });    
                 metaCID = new CID(metaCID);
                 type = await FileType.fromStream(toStream(ipfs.cat(metaCID, {
                     length: 100 // or however many bytes you need
                 })));     
                 console.log("Metadata field extension get.");       
+            } else {
+                type = {
+                    "ext": metaExt
+                }
             }
 
 
@@ -453,11 +468,17 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
 
     await console.log("Duration from Analysis: ", (Date.now() - analysisStartTime) / 1000);
 
+    // delete directory recursively
+    try {
+        await fs.rmdirSync(dir, { recursive: true });
 
+        console.log(`${dir} was deleted!`);
+    } catch (err) {
+        console.log(`Error while trying to delete ${dir}.`);
+    }
     process.exit(1);
 
 }
 
-getNftInfoByCollectionAndId("0x7A676bE8344A282Be2cfCe69d172B11aC2FBd812", 102);
-
+getNftInfoByCollectionAndId("0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", 1859);
 
