@@ -20,6 +20,7 @@ const sizeOf = require('image-size');
 const fs = require('fs');
 const ethNetwork = 'https://mainnet.infura.io/v3/d7f30da03a734567a801120b36cc7f6a';
 const web3 = new Web3(new Web3.providers.HttpProvider(ethNetwork));
+const getDimensions = require('get-video-dimensions');
 
 
 // Info
@@ -318,6 +319,7 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
 
 
     if(metaUrl != undefined && metaUrl != "" && metaUrl.startsWith("http")) {
+        console.log(metaUrl);
 
         // Ping for metadata get request.
         var start = Date.now() / 1000;
@@ -378,7 +380,7 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
                     repo: './jsipfs'
                 });    
                 metaCID = new CID(metaCID);
-                type = await FileType.fromStream(toStream(ipfs.cat(metaCID, {
+                type = "." + await FileType.fromStream(toStream(ipfs.cat(metaCID, {
                     length: 100 // or however many bytes you need
                 })));     
                 console.log("Metadata field extension get.");       
@@ -387,11 +389,24 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
                     "ext": metaExt
                 }
             }
+            console.log(type["ext"]);
 
 
             // Gets the size of the metadata image.
-            await downloadImage(metaImgAvailable, "../../image.png");
-            dimensions = sizeOf('../image.png');
+            await downloadImage(metaImgAvailable, `../../ERC721/temp/image${type["ext"]}`);
+            console.log("Downloaded");
+
+            try {
+                getDimensions(`../../ERC721/temp/image${type["ext"]}`).then(function (dimension) {
+                    console.log(dimension.width);
+                    console.log(dimension.height);
+                });
+            } catch (err) {
+                dimensions = sizeOf(`./temp/image${type["ext"]}`);
+                console.log(dimensions);
+            }
+
+            
             console.log("Downloaded and checked image dimensions.");
             
 
@@ -458,13 +473,6 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     console.log('--------------------------------------------------------');
 
 
-    // Deletes temp image.
-    try {
-        fs.unlinkSync('../image.png')
-    } catch(err) {
-        console.error(err)
-    }
-
 
     await console.log("Duration from Analysis: ", (Date.now() - analysisStartTime) / 1000);
 
@@ -476,9 +484,17 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     } catch (err) {
         console.log(`Error while trying to delete ${dir}.`);
     }
+    try {
+        await fs.rmdirSync("./temp", { recursive: true });
+
+        console.log(`${"./temp"} was deleted!`);
+    } catch (err) {
+        console.log(`Error while trying to delete ${"./temp"}.`);
+    }
+
     process.exit(1);
 
 }
 
-getNftInfoByCollectionAndId("0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", 1859);
+getNftInfoByCollectionAndId("0x5182a9bA9eacEf7997056c247eA9b5E317224A16", 2192);
 
