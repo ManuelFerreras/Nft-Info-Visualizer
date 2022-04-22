@@ -6,18 +6,12 @@ Definitions:
 
 */
 
-// Modules
+// Modules  
 const fetch = require('node-fetch');
-const toStream = require('it-to-stream');
-const FileType = require('file-type');
-const { create, globSource } = require('ipfs');
-const CID = require('cids');
 const path = require('path');
 const download = require('image-downloader');
 const sizeOf = require('image-size');
 const fs = require('fs');
-const getDimensions = require('get-video-dimensions');
-const base32Decode = require('base32-decode')
 
 const apiBaseUrl = "https://mainnet-public.mirrornode.hedera.com/";
 
@@ -253,15 +247,7 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
 
         if (metaImgAvailable != false) {
 
-            // Gets file extension if possible, from url.
-            if(metaImgAvailable != undefined && metaImgAvailable != "") {
-                metaExt = path.extname(metaImgAvailable);
-                console.log("Metadata file extension checked.");
-            }
-
-
             // Gets the metadata CID if possible, from img url.
-            
             if(metaImgAvailable != undefined && metaImgAvailable != "" && metaImgAvailable.endsWith(".ipfs.dweb.link/")) {
                 metaCID = metaImgAvailable.split("/")[2].split(".")[0];
             } else if(metaImgAvailable != undefined && metaImgAvailable != "" && metaImgAvailable.startsWith("ipfs://ipfs/")) {
@@ -282,43 +268,15 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
             console.log("Mata Image Url get.");
 
 
-            // In case it was not possible to get the metadata extension before, it gets it from ipfs api, if possible.
-            if (metaExt == "" || metaExt == ".link") {
-                await (async () => {
-                  /*
-                  const url =
-                    'https://ipfs.io/ipfs/QmXwYpfRi5PG22U2opeouhSdhkbdCgSRKSWS2v2CqBUugV';
-                  */
-        
-                  console.log("metaImgAvailable> ", metaImgAvailable);
-        
-                  const stream = got.stream(metaImgAvailable);
-        
-                  fileInfo = await fileTypeFromStream(stream);
-        
-                  console.log("type---->", fileInfo);
-                })();
-        
-                console.log("Metadata field extension get.", fileInfo);
-        
-                mediaType = fileInfo?.ext;
-              }
-            console.log(type["ext"]);
-
-
             // Gets the size of the metadata image.
-            await downloadImage(metaImgAvailable, `../../ERC721/temp/image${type["ext"]}`);
+            await downloadImage(metaImgAvailable, `../../Hedera/temp/image.gif`);
             console.log("Downloaded");
 
-            try {
-                getDimensions(`../../Hedera/temp/image${type["ext"]}`).then(function (dimension) {
-                    console.log(dimension.width);
-                    console.log(dimension.height);
-                });
-            } catch (err) {
-                dimensions = sizeOf(`./temp/image${type["ext"]}`);
-                console.log(dimensions);
-            }
+        
+            // Get Image meta
+            dimensions = await sizeOf(`./temp/image.gif`);
+            console.log(dimensions);
+        
 
             
             console.log("Downloaded and checked image dimensions.");
@@ -358,8 +316,16 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
     console.log('-------------------- Report Results --------------------\n');
 
 
+    console.log('Open Source: Unsupported');
+    console.log("In Compliance With Token Standards: Unsupported");
+    console.log("Audit Available: Unsupported");
+    console.log("Contract is Optimized: Unsupported");
+    console.log("Using well-established libraries: Unsupported");
+    console.log("Smart contract owner is multi-sig: Unsupported\n\n");
+    console.log("OpenSea Metadata Standard: Unsupported");
+
+
     console.log(metaUrl != "" && metaUrl != undefined? "Metadata Available: A" : "Metadata Available: F");
-    console.log(metaFieldsStandard? "OpenSea Metadata Standard: A" : "OpenSea Metadata Standard: F");
     console.log(metaIPFS? "Metadata on IPFS: A" : "Metadata on IPFS: F");
     console.log(metaSSL? "Metadata Storage Uses SSL: A" : "Metadata Storage Uses SSL: F");
     console.log(metaImgAvailable? "Asset Available: A" : "Asset Available: F");
@@ -367,14 +333,10 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
     console.log(metaImgSSL? "Asset Uses SSL: A" : "Asset Uses SSL: F");
 
     // No MVP
-    console.log("Media file format: " + type["ext"]);
     console.log("Image resolution: " + dimensions.width + "p x " + dimensions.height + "p");
+    console.log("Image extension: " + dimensions.type);
     console.log(metadataLatency < 100? "Metadata Latency: A" : 'Metadata Latency: F');
     console.log(mediaLatency < 100? "Media Latency: A" : 'Media Latency: F');
-
-    console.log("Gas spent on smart contract creation: " + contractCreationGas);
-    console.log("Gas spent per mint: " + mintGas);
-    console.log("Gas spent per transfer: " + transferGas);
 
 
     console.log("\n");
@@ -404,5 +366,4 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
 
 }
 
-getNftInfoByCollectionAndId("0.0.660478", "141");
-
+getNftInfoByCollectionAndId("0.0.653968", "1");
