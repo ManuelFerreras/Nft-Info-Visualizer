@@ -8,7 +8,6 @@ Definitions:
 
 // Modules  
 const fetch = require('node-fetch');
-const path = require('path');
 const download = require('image-downloader');
 const sizeOf = require('image-size');
 const fs = require('fs');
@@ -24,7 +23,6 @@ async function downloadImage(url, filepath) {
     });
 }
 
-
 async function checkMetadata(tokenId, serial) {
 
     return await fetch(apiBaseUrl + `api/v1/tokens/${tokenId}/nfts/${serial}`).then(res => res.json()).then(res => {
@@ -39,25 +37,34 @@ async function checkMetadata(tokenId, serial) {
 
 }
 
-async function getNftMetadata(url) {
-    return await fetch(url).then(res => res.json()).then(res => {
-        return res["metadata"];
-    }).catch(() => {
-        console.log("Metadata Check Error");
-        return undefined;
-    });
-}
+async function checkMetadataHIP10Compliance(tokenId, serial) {
 
-async function checkMetadataFields(metadataURL) {
-    await fetch(metadataURL).then(res => res.json()).then(res => {
-        if('CID' in res && res['CID'] != "" && 'external_url' in res && res['external_url'] != "" && 'description' in res && res['description'] != "" && 'name' in res && res['name'] && 'attributes' in res && res['attributes'] != [] && res['attributes'] != "") {
+    return await fetch(apiBaseUrl + `api/v1/tokens/${tokenId}/nfts/${serial}`).then(res => res.json()).then(res => {
+        if('name' in res && 'description' in res && 'image' in res && 'localization' in res && 'decimals' in res && 'properties' in res && 'version' in res) {
             return true;
         } else {
             return false;
         }
-    }).catch(err => {
-        return false;
+    }).catch(() => {
+        console.log("Metadata HIP10 Compliance Check Error");
     });
+
+}
+
+async function checkMetadataCompliance(tokenId) {
+
+    return await fetch(apiBaseUrl + `api/v1/tokens/${tokenId}/nfts/`).then(res => res.json()).then(res => {
+        if(JSON.stringify(res).startsWith('{"nfts":[],"links":{"next":null}}')) {
+            return false;
+        } else if ('nfts' in res) {
+            return true;
+        } else if (JSON.stringify(res).startsWith('{"_status":{"messages":[{"message":"No such token id -')) {
+            return undefined;
+        }
+    }).catch(() => {
+        console.log("Metadata Check Error");
+    });
+
 }
 
 async function checkIfIPFSMetadata(metadataURL) {
@@ -125,34 +132,6 @@ async function checkIfImageIsSSL(metadataURL) {
     }).catch(err => console.log("Image SSL Error"));
 }
 
-async function getTokenMintGasSpent(collectionAddress, tokenId) { 
-    return await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", "0x0000000000000000000000000000000000000000000000000000000000000000", "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
-    .then(json => {
-        return web3.utils.hexToNumber(json["result"][0]["gasUsed"]);
-    }).catch(err => console.log("Nft Mint Gas Spent Error: " + err));
-}
-
-async function getTokenTransferGasSpent(collectionAddress, tokenId) { 
-    return await api.log.getLogs(collectionAddress, 0, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", undefined, "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
-    .then(json => {
-        
-        // Check if any transfer from any address different to address(0) has been made.
-        let transfer = json["result"].filter(obj => obj["topics"][1] != '0x0000000000000000000000000000000000000000000000000000000000000000');
-        if (transfer.length == 0 && json["result"].length > 0) transfer = json["result"];
-
-        return web3.utils.hexToNumber(transfer[0]["gasUsed"]);
-    }).catch(err => console.log("Nft Transfer Gas Spent Error: " + err));
-}
-
-async function getContractCreationGasSpent(collectionAddress) {
-    return await api.account.txlist(collectionAddress, 0, 99999999,'asc')
-    .then(json => {
-        return json["result"][0]["gasUsed"];
-    })
-    .catch(err => console.log("Contract Creation Gas Spent Error: " + err)); 
-}
-
-
 
 async function getNftInfoByCollectionAndId(tokenId, serial) {
     // Local Variables
@@ -160,14 +139,11 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
     let metaImgAvailable;
     let metadataLatency;
     let mediaLatency;
-    let type;
     let dimensions;
-    let metaExt;
     let metaCID;
+    let metaHederaHIP17Compliance;
+    let metaHederaHIP10Compliance = false;
 
-    let mintGas;
-    let contractCreationGas;
-    let transferGas;
 
     const dir = './jsipfs';
     // delete directory recursively
@@ -179,29 +155,27 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
         console.log(`Error while trying to delete ${dir}.`);
     }
 
+    // Creates temp dir
+    if (!fs.existsSync("./temp")){
+        fs.mkdirSync("./temp");
+    }
+
 
     // Just to measure analysis time.
     let analysisStartTime = Date.now();
     console.log("Analysis Start Time: " + analysisStartTime);
 
 
-    // // Gas Spent a SC Creation.
-    // contractCreationGas = await getContractCreationGasSpent(collectionAddress).catch(console.log);
-    // console.log("Contract creation gas calculated.");
-    
-
-    // // Gas Spent on Nft Mint.
-    // mintGas = await getTokenMintGasSpent(collectionAddress, id).catch(console.log);
-    // console.log("Token mint gas calculated.");
-    
-
-    // // Gas Spent on Nft Transfer.
-    // transferGas = await getTokenTransferGasSpent(collectionAddress, id).catch(console.log);
-    // console.log("Token transfer gas calculated.");
-
-
     metaUrl = await checkMetadata(tokenId, serial).catch(console.log);
     console.log("Metadata Url get.");
+
+    // Checks if metadata follows the HIP17 or greater standard.
+    metaHederaHIP17Compliance = await checkMetadataCompliance(tokenId); 
+    console.log("Metadata compliance checked.");
+
+    if(metaHederaHIP17Compliance) {
+        metaHederaHIP10Compliance = await checkMetadataHIP10Compliance(tokenId, serial);
+    }
 
     // Decodes de metadata CID.
     if(metaUrl != undefined && metaUrl != false && metaUrl != "") {
@@ -223,12 +197,7 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
         var start = Date.now() / 1000;
         await checkMetadata(tokenId, serial).then(() => metadataLatency = Date.now() / 1000 - start);
         console.log("Metadata ping done.");
-        
 
-        // Checks if metadata follows the OpenSea metadata standard.
-        metaFieldsStandard = await checkMetadataFields(metaUrl).catch(console.log); 
-        console.log("Metadata fields checked.");
-        
         
         // Checks if metadata is uploaded to IPFS.
         metaIPFS = await checkIfIPFSMetadata(metaUrl).catch(console.log);  
@@ -268,18 +237,15 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
             console.log("Mata Image Url get.");
 
 
-            // Gets the size of the metadata image.
+            // Gets the size of the metadata image. Just a fixed example.
             await downloadImage(metaImgAvailable, `../../Hedera/temp/image.gif`);
-            console.log("Downloaded");
+            console.log("Downloaded image");
 
         
             // Get Image meta
             dimensions = await sizeOf(`./temp/image.gif`);
             console.log(dimensions);
-        
-
-            
-            console.log("Downloaded and checked image dimensions.");
+            console.log("Checked image dimensions.");
             
 
             // Checks if the image is uploaded to ipfs.
@@ -304,7 +270,6 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
         }
 
     } else {
-        metaFieldsStandard = false;
         metaIPFS = false;
         metaSSL = false;
         metaImgAvailable = false;
@@ -321,8 +286,8 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
     console.log("Audit Available: Unsupported");
     console.log("Contract is Optimized: Unsupported");
     console.log("Using well-established libraries: Unsupported");
-    console.log("Smart contract owner is multi-sig: Unsupported\n\n");
-    console.log("OpenSea Metadata Standard: Unsupported");
+    console.log("Smart contract owner is multi-sig: Unsupported");
+    console.log("OpenSea Metadata Standard: Unsupported\n\n");
 
 
     console.log(metaUrl != "" && metaUrl != undefined? "Metadata Available: A" : "Metadata Available: F");
@@ -331,10 +296,13 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
     console.log(metaImgAvailable? "Asset Available: A" : "Asset Available: F");
     console.log(metaImgIPFS? "Asset on IPFS: A" : "Asset on IPFS: F");
     console.log(metaImgSSL? "Asset Uses SSL: A" : "Asset Uses SSL: F");
+    console.log(metaHederaHIP17Compliance == false? "In Compliance with Token Standard HIP-17 and greater: F" : metaHederaHIP17Compliance == true? "In Compliance with Token Standard HIP-17 and greater: A" : "In Compliance with Token Standard HIP-17 and greater: Invalid Token Id");
+    console.log(metaHederaHIP10Compliance == false? "In Compliance with Metadata Standard HIP-10: F" : "In Compliance with Metadata Standard HIP-10: A");
+    
 
     // No MVP
-    console.log("Image resolution: " + dimensions.width + "p x " + dimensions.height + "p");
-    console.log("Image extension: " + dimensions.type);
+    console.log(dimensions == undefined? "Image Resolution: Unknown" : "Image resolution: " + dimensions.width + "p x " + dimensions.height + "p");
+    console.log(dimensions == undefined? "Image Extension: Unknown" : "Image extension: " + dimensions.type);
     console.log(metadataLatency < 100? "Metadata Latency: A" : 'Metadata Latency: F');
     console.log(mediaLatency < 100? "Media Latency: A" : 'Media Latency: F');
 
