@@ -133,6 +133,43 @@ async function checkIfImageIsSSL(metadataURL) {
 }
 
 
+async function getNftTxList(tokenId, serial){
+
+    return await fetch(apiBaseUrl + `api/v1/tokens/${tokenId}/nfts/${serial}/transactions`).then(res => res.json()).then(res => {
+        return res["transactions"];
+    }).catch(() => {
+        console.log("Nft Txs Query Error: " + err);
+    });
+
+}
+
+
+async function getTxGas(txId) {
+
+    return await fetch(apiBaseUrl + `api/v1/transactions/${txId}`).then(res => res.json()).then(res => {
+        return (res["transactions"][0]["charged_tx_fee"]);
+    }).catch(() => {
+        console.log("Nft Txs Query Error: " + err);
+    });
+
+}
+
+
+async function getTokenPriceOnDay() {
+    const date = new Date();
+    const stringDate = date.getDate() + '-' + (date.getMonth() + 1 ) + '-' + date.getFullYear();
+    console.log('Getting HBAR price on ' + stringDate);
+    const url = 'https://api.coingecko.com/api/v3/coins/'
+        + 'hedera-hashgraph'
+        + '/history?date='
+        + stringDate;
+
+    return await fetch(url).then(res => res.json()).then(res => {
+        return (res["market_data"]["current_price"]["usd"]);
+    });
+}
+
+
 async function getNftInfoByCollectionAndId(tokenId, serial) {
     // Local Variables
     let metaUrl;
@@ -143,7 +180,21 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
     let metaCID;
     let metaHederaHIP17Compliance;
     let metaHederaHIP10Compliance = false;
+    let accumulatedGas = 0;
+    let usdUsed = 0;
+    let totalTxs = 0;
 
+    let wattPerUSD = 370; // energy comsumed per USD spent on Hedera tx fee
+    // this is based on Hedera's node statistics
+    // (~$0.0001 average assumption) uses ~.037 W.
+  
+    let kgCO2PerWatt = 0.000233; // 1 kWh = 0.233 kg CO2
+    // https://www.rensmart.com/Calculators/KWH-to-CO2
+
+    let co2Used = 0;
+
+    let hbarPrice = await getTokenPriceOnDay();
+    console.log(hbarPrice);
 
     const dir = './jsipfs';
     // delete directory recursively
@@ -164,6 +215,22 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
     // Just to measure analysis time.
     let analysisStartTime = Date.now();
     console.log("Analysis Start Time: " + analysisStartTime);
+
+    await getNftTxList(tokenId, serial)
+    .then( async res => {
+        totalTxs = res.length;
+
+        if (totalTxs > 0) {
+            for(const tx of res) {
+                accumulatedGas = accumulatedGas + await getTxGas(tx["transaction_id"]);
+            }
+
+            usdUsed = accumulatedGas / 100000000 * hbarPrice;
+
+            co2Used = usdUsed * wattPerUSD * kgCO2PerWatt;
+        }
+    })
+    console.log("Gas Impact Calculated.")
 
 
     metaUrl = await checkMetadata(tokenId, serial).catch(console.log);
@@ -307,6 +374,11 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
     console.log(mediaLatency < 100? "Media Latency: A" : 'Media Latency: F');
 
 
+    console.log("\n\nTotal gas Used: " + accumulatedGas);
+    console.log("Total Transactions: " + totalTxs);
+    console.log("Total CO2 Used: " + co2Used + " Kgs");
+
+
     console.log("\n");
     console.log('--------------------------------------------------------');
 
@@ -334,4 +406,4 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
 
 }
 
-getNftInfoByCollectionAndId("0.0.412040", "1");
+getNftInfoByCollectionAndId("0.0.835094", "10");
