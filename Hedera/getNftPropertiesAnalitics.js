@@ -334,4 +334,4 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
 
 }
 
-getNftInfoByCollectionAndId("0.0.653968", "1");
+getNftInfoByCollectionAndId("0.0.412040", "1");

@@ -8,7 +8,8 @@ Definitions:
 
 // Modules
 const Web3 = require("web3");
-const api = require('etherscan-api').init('KXX4T9HFVXGFZ5ZV1B3MXXG7RSSKWRD3DC');
+const apiKey = "KXX4T9HFVXGFZ5ZV1B3MXXG7RSSKWRD3DC"
+const api = require('etherscan-api').init(apiKey);
 const fetch = require('node-fetch');
 const toStream = require('it-to-stream');
 const FileType = require('file-type');
@@ -213,6 +214,15 @@ async function isMultiSig(contract) {
 }
 
 
+async function getNftTxList(collectionAddress, tokenId){
+    return await api.log.getLogs(collectionAddress, 0, 99999999, undefined, "AND", undefined, "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(tokenId), 64))
+    .then(json => {
+        return(json["result"]);
+    })
+    .catch(err => console.log("Nft Txs Query Error: " + err))
+}
+
+
 async function getNftInfoByCollectionAndId(collectionAddress, id) {
     // Local Variables
     let erc721compliant;
@@ -237,6 +247,11 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     let contractCreationGas;
     let transferGas;
 
+    let kgCo2perGas = 0.0001809589427;
+    let accumulatedGas = 0;
+    let totalTxs = 0;
+    let co2Used = 0;
+
     const dir = './jsipfs';
     // delete directory recursively
     try {
@@ -247,10 +262,29 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
         console.log(`Error while trying to delete ${dir}.`);
     }
 
-
+    // Creates temp dir
+    if (!fs.existsSync("./temp")){
+        fs.mkdirSync("./temp");
+    }
+    
     // Just to measure analysis time.
     let analysisStartTime = Date.now();
     console.log("Analysis Start Time: " + analysisStartTime);
+
+
+    await getNftTxList(collectionAddress, id)
+    .then( async res => {
+        totalTxs = res.length;
+
+        if (totalTxs > 0) {
+            for(const tx of res) {
+                accumulatedGas = accumulatedGas + await web3.utils.hexToNumber(tx["gasUsed"]);
+            }
+
+            co2Used = accumulatedGas * kgCo2perGas;
+        }
+    })
+    console.log("Gas Impact Calculated.")
 
 
     // New contract instance.
@@ -392,22 +426,14 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
             console.log(type["ext"]);
 
 
-            // Gets the size of the metadata image.
-            await downloadImage(metaImgAvailable, `../../ERC721/temp/image${type["ext"]}`);
-            console.log("Downloaded");
+            // Gets the size of the metadata image. Just a fixed example.
+            await downloadImage(metaImgAvailable, `../../ERC721/temp/image.png`);
+            console.log("Downloaded image");
 
-            try {
-                getDimensions(`../../ERC721/temp/image${type["ext"]}`).then(function (dimension) {
-                    console.log(dimension.width);
-                    console.log(dimension.height);
-                });
-            } catch (err) {
-                dimensions = sizeOf(`./temp/image${type["ext"]}`);
-                console.log(dimensions);
-            }
-
-            
-            console.log("Downloaded and checked image dimensions.");
+            // Get Image meta
+            dimensions = await sizeOf(`./temp/image.png`);
+            console.log(dimensions);
+            console.log("Checked image dimensions.");
             
 
             // Checks if the image is uploaded to ipfs.
@@ -467,6 +493,10 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     console.log("Gas spent on smart contract creation: " + contractCreationGas);
     console.log("Gas spent per mint: " + mintGas);
     console.log("Gas spent per transfer: " + transferGas);
+
+    console.log("\n\nTotal gas Used: " + accumulatedGas);
+    console.log("Total Transactions: " + totalTxs);
+    console.log("Total CO2 Used: " + co2Used + " Kgs");
 
 
     console.log("\n");
