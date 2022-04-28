@@ -148,7 +148,7 @@ async function getTxGas(txId) {
 
     return await fetch(apiBaseUrl + `api/v1/transactions/${txId}`).then(res => res.json()).then(res => {
         return (res["transactions"][0]["charged_tx_fee"]);
-    }).catch(() => {
+    }).catch((err) => {
         console.log("Nft Txs Query Error: " + err);
     });
 
@@ -183,6 +183,8 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
     let accumulatedGas = 0;
     let usdUsed = 0;
     let totalTxs = 0;
+    let totalEthTxs = 0;
+    let totalEthGas = 0;
 
     let wattPerUSD = 370; // energy comsumed per USD spent on Hedera tx fee
     // this is based on Hedera's node statistics
@@ -192,9 +194,16 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
     // https://www.rensmart.com/Calculators/KWH-to-CO2
 
     let co2Used = 0;
+    let ethereumCo2Simulation = 0;
 
     let hbarPrice = await getTokenPriceOnDay();
     console.log(hbarPrice);
+
+    // Ethereum Gas Fees
+    const fees = {
+        "transfer": 65000, // Gas
+        "mint": 150000 // Gas
+    }
 
     const dir = './jsipfs';
     // delete directory recursively
@@ -223,10 +232,18 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
         if (totalTxs > 0) {
             for(const tx of res) {
                 accumulatedGas = accumulatedGas + await getTxGas(tx["transaction_id"]);
+
+                if(tx["type"] == "TOKENMINT") {
+                    totalEthTxs += 1;
+                    totalEthGas += fees["mint"];
+                } else if (tx["type"] == "CRYPTOTRANSFER") {
+                    totalEthGas += fees["transfer"];
+                    totalEthTxs += 1;
+                }
             }
 
             usdUsed = accumulatedGas / 100000000 * hbarPrice;
-
+            ethereumCo2Simulation = totalEthGas * 0.0001809589427;
             co2Used = usdUsed * wattPerUSD * kgCO2PerWatt;
         }
     })
@@ -377,6 +394,10 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
     console.log("\n\nTotal gas Used: " + accumulatedGas);
     console.log("Total Transactions: " + totalTxs);
     console.log("Total CO2 Used: " + co2Used + " Kgs");
+
+    console.log("\n\Ethereum Aprox. Equivalent CO2 Used: " + ethereumCo2Simulation + " Kgs");
+    console.log("\n\nTotal gas Used: " + totalEthGas);
+    console.log("Total Transactions: " + totalEthTxs);
 
 
     console.log("\n");
