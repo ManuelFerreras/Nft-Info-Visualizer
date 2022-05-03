@@ -197,8 +197,9 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
     let accumulatedGas = 0;
     let usdUsed = 0;
     let totalTxs = 0;
-    let totalEthTxs = 0;
+    let totalEthTxs = 1;
     let totalEthGas = 0;
+    let ethereumSCCreationAvg = 3450000;
 
     let wattPerUSD = 370; // energy comsumed per USD spent on Hedera tx fee
     // this is based on Hedera's node statistics
@@ -246,6 +247,8 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
     console.log("Gas spent on SC Creation: " + contractCreationGas);
     console.log("Nfts Amount in Collection: " + totalCollectionNfts);
     console.log("Average mint added per nft: " + accumulatedGas);
+
+    totalEthGas = Math.floor(ethereumSCCreationAvg / totalCollectionNfts);
 
 
     await getNftTxList(tokenId, serial)

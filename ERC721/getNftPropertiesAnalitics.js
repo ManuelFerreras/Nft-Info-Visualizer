@@ -207,6 +207,7 @@ async function getTokenTransferGasSpent(collectionAddress, tokenId) {
 async function getContractCreationGasSpent(collectionAddress) {
     return await api.account.txlist(collectionAddress, 0, 99999999,'asc')
     .then(json => {
+        console.log(json["result"][0]["gasUsed"]);
         return json["result"][0]["gasUsed"];
     })
     .catch(err => console.log("Contract Creation Gas Spent Error: " + err)); 
@@ -290,8 +291,9 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     let totalTxs = 0;
     let co2Used = 0;
     let hederaCo2Simulation = 0;
-    let totalHbarTxs = 0;
+    let totalHbarTxs = 1;
     let totalHbarGas = 0;
+    let hederaSCCreationAvg = 850000000;
 
 
 
@@ -342,6 +344,10 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     accumulatedGas = Math.floor(await getContractCreationGasSpent(collectionAddress).catch(console.log) / totalNftSupply);
     console.log("Contract creation gas calculated.");
     console.log(accumulatedGas);
+
+
+    // Gas Spent on SC Creation Simulation on Hedera.
+    totalHbarGas = Math.floor(hederaSCCreationAvg / totalNftSupply);
 
 
     await getNftTxList(collectionAddress, id)
