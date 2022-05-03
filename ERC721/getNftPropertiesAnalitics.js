@@ -261,6 +261,7 @@ async function getNftSupply(collectionAddress) {
 }
 
 
+
 async function getNftInfoByCollectionAndId(collectionAddress, id) {
     // Local Variables
     let erc721compliant;

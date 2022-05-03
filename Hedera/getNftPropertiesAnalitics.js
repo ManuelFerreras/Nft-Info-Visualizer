@@ -184,8 +184,22 @@ async function getNftsAmount(tokenId) {
 }
 
 
+async function getNftsTransferGas(tokenId) {
+    return await fetch(`https://api.dragonglass.me/hedera/api/nfts/transfers?tokenId=${tokenId}&sortBy=desc`, { method: 'GET', headers: {"X-API-KEY": accessKey}}).then(res => res.json()).then(async res => {
+        return await getTxGasDragonGlass(res["data"][0]["transactionId"]);
+    });
+}
+
+async function getTxGasDragonGlass(txId) {
+    return await fetch(`https://api.dragonglass.me/hedera/api/transactions/${txId}`, { method: 'GET', headers: {"X-API-KEY": accessKey}}).then(res => res.json()).then(async res => {
+        return(res["data"][0]["transactionFee"]);
+    });
+}
+
+
 async function getNftInfoByCollectionAndId(tokenId, serial) {
     // Local Variables
+    
     let metaUrl;
     let metaImgAvailable;
     let metadataLatency;
@@ -200,6 +214,8 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
     let totalEthTxs = 1;
     let totalEthGas = 0;
     let ethereumSCCreationAvg = 3450000;
+    let transferGas = await getNftsTransferGas(tokenId);
+    let mintGas = 0;
 
     let wattPerUSD = 370; // energy comsumed per USD spent on Hedera tx fee
     // this is based on Hedera's node statistics
@@ -260,6 +276,7 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
                 accumulatedGas = accumulatedGas + await getTxGas(tx["transaction_id"]);
 
                 if(tx["type"] == "TOKENMINT") {
+                    mintGas = await getTxGas(tx["transaction_id"]);
                     totalEthTxs += 1;
                     totalEthGas += fees["mint"];
                 } else if (tx["type"] == "CRYPTOTRANSFER") {
@@ -415,6 +432,11 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
     console.log(dimensions == undefined? "Image Extension: Unknown" : "Image extension: " + dimensions.type);
     console.log(metadataLatency < 100? "Metadata Latency: A" : 'Metadata Latency: F');
     console.log(mediaLatency < 100? "Media Latency: A" : 'Media Latency: F');
+
+
+    console.log("\n\nGas spent on smart contract creation: " + contractCreationGas);
+    console.log("Gas spent per mint: " + mintGas);
+    console.log("Gas spent per transfer: " + transferGas);
 
 
     console.log("\n\nTotal gas Used: " + accumulatedGas);
