@@ -237,10 +237,33 @@ async function getNftTxList(collectionAddress, tokenId){
 }
 
 
+async function getNftSupply(collectionAddress) {
+    let found = true;
+    let minBlock = 0;
+    let res = 0;
+
+    while (found) {
+        await api.log.getLogs(collectionAddress, minBlock, 99999999, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "AND", "0x0000000000000000000000000000000000000000000000000000000000000000", "AND", undefined, "AND", undefined)
+        .then(json => {
+            if(json["result"].length != 1000) {
+                res = (web3.utils.hexToNumber(json["result"][json["result"].length - 1 ]["topics"][3]));
+                found = false;
+            }
+            else {
+                minBlock = web3.utils.hexToNumber(json["result"][json["result"].length - 1 ]["blockNumber"]);
+            }
+            
+        });
+    }
+
+    return res;
+}
+
+
 async function getNftInfoByCollectionAndId(collectionAddress, id) {
     // Local Variables
     let erc721compliant;
-    let auditedContract;
+    let auditedContract; 
     let optimizedContract;
     let securityCounter = 0;
 
@@ -256,6 +279,7 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     let sourceCode;
     let contract;
     let isContract;
+    let totalNftSupply;
     
     let mintGas;
     let contractCreationGas;
@@ -268,6 +292,7 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     let hederaCo2Simulation = 0;
     let totalHbarTxs = 0;
     let totalHbarGas = 0;
+
 
 
     let wattPerUSD = 370; // energy comsumed per USD spent on Hedera tx fee
@@ -305,6 +330,18 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     // Just to measure analysis time.
     let analysisStartTime = Date.now();
     console.log("Analysis Start Time: " + analysisStartTime);
+
+
+    // Get Nfts Supply
+    totalNftSupply = await getNftSupply(collectionAddress).catch(console.log);
+    console.log("Nfts Supply calculated.");
+    console.log(totalNftSupply);
+
+
+    // Gas Spent on SC Creation.
+    accumulatedGas = Math.floor(await getContractCreationGasSpent(collectionAddress).catch(console.log) / totalNftSupply);
+    console.log("Contract creation gas calculated.");
+    console.log(accumulatedGas);
 
 
     await getNftTxList(collectionAddress, id)
@@ -350,11 +387,6 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     // Gets the amount of verified libraries this SC use.
     securityCounter = await checkLibraries(SecurityLibraries, sourceCode).catch(console.log);
     console.log("Contract security count done.");
-    
-
-    // Gas Spent a SC Creation.
-    contractCreationGas = await getContractCreationGasSpent(collectionAddress).catch(console.log);
-    console.log("Contract creation gas calculated.");
     
 
     // Gas Spent o Nft Mint.
@@ -544,8 +576,8 @@ async function getNftInfoByCollectionAndId(collectionAddress, id) {
     console.log("Total CO2 Used: " + co2Used + " Kgs");
 
     console.log("\n\Hedera Aprox. Equivalent CO2 Used: " + hederaCo2Simulation + " Kgs");
-    console.log("\n\nTotal gas Used: " + totalHbarGas);
-    console.log("Total Transactions: " + totalHbarTxs);
+    console.log("Total HBar Simulation gas Used: " + totalHbarGas);
+    console.log("Total HBar Simulation Transactions: " + totalHbarTxs);
 
 
     console.log("\n");

@@ -11,6 +11,7 @@ const fetch = require('node-fetch');
 const download = require('image-downloader');
 const sizeOf = require('image-size');
 const fs = require('fs');
+let accessKey = "6208ce19-a3d0-3a84-93a2-7d30705da51b";
 
 const apiBaseUrl = "https://mainnet-public.mirrornode.hedera.com/";
 
@@ -170,6 +171,19 @@ async function getTokenPriceOnDay() {
 }
 
 
+async function getTokenCreationTx(tokenId) {
+    return await fetch(`https://api.dragonglass.me/hedera/api/transactions?contractID=${tokenId}`, { method: 'GET', headers: {"X-API-KEY": accessKey}}).then(res => res.json()).then(res => {
+        return (res["data"][0]["transactionFee"]);
+    });
+}
+
+async function getNftsAmount(tokenId) {
+    return await fetch(`https://api.dragonglass.me/hedera/api/nfts?tokenId=${tokenId}`, { method: 'GET', headers: {"X-API-KEY": accessKey}}).then(res => res.json()).then(res => {
+        return (res["size"]);
+    });
+}
+
+
 async function getNftInfoByCollectionAndId(tokenId, serial) {
     // Local Variables
     let metaUrl;
@@ -224,6 +238,15 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
     // Just to measure analysis time.
     let analysisStartTime = Date.now();
     console.log("Analysis Start Time: " + analysisStartTime);
+
+
+    let contractCreationGas = await getTokenCreationTx(tokenId).catch(console.log);
+    let totalCollectionNfts = await getNftsAmount(tokenId).catch(console.log);
+    accumulatedGas = Math.floor(contractCreationGas / totalCollectionNfts);
+    console.log("Gas spent on SC Creation: " + contractCreationGas);
+    console.log("Nfts Amount in Collection: " + totalCollectionNfts);
+    console.log("Average mint added per nft: " + accumulatedGas);
+
 
     await getNftTxList(tokenId, serial)
     .then( async res => {
