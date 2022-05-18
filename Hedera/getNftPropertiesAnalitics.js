@@ -295,6 +295,7 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
 
     metaUrl = await checkMetadata(tokenId, serial).catch(console.log);
     console.log("Metadata Url get.");
+    console.log(metaUrl);
 
     // Checks if metadata follows the HIP17 or greater standard.
     metaHederaHIP17Compliance = await checkMetadataCompliance(tokenId); 
