@@ -8,7 +8,6 @@ Definitions:
 
 // Modules  
 const fetch = require('node-fetch');
-const download = require('image-downloader');
 const sizeOf = require('image-size');
 const fs = require('fs');
 let accessKey = "6208ce19-a3d0-3a84-93a2-7d30705da51b";
@@ -16,13 +15,6 @@ let accessKey = "6208ce19-a3d0-3a84-93a2-7d30705da51b";
 const apiBaseUrl = "https://mainnet-public.mirrornode.hedera.com/";
 
 
-// Snippets
-async function downloadImage(url, filepath) {
-    return await download.image({
-       url,
-       dest: filepath 
-    });
-}
 
 async function checkMetadata(tokenId, serial) {
 
@@ -90,6 +82,18 @@ async function checkIfImageAvailable(metadataURL) {
         if('CID' in res) {
             if(res['CID'] != "") {
                 return res["CID"];
+            } else {
+                return false;
+            }
+        } else if('cid' in res) {
+            if(res['cid'] != "") {
+                return res["cid"];
+            } else {
+                return false;
+            }
+        } else if('image' in res) {
+            if(res['image'] != "") {
+                return res["image"];
             } else {
                 return false;
             }
@@ -311,7 +315,21 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
         const buff = Buffer.from(metaUrl["metadata"], 'base64');
 
         // decode buffer as UTF-8
-        const str = buff.toString('utf-8');
+        let str = buff.toString('utf-8');
+
+
+        if(str != undefined && str != "" && str.endsWith(".ipfs.dweb.link/")) {
+            str = str.split("/")[2].split(".")[0];
+        } else if(str != undefined && str != "" && str.startsWith("ipfs://ipfs/")) {
+            str = str.split("/")[3];
+        } else if(str != undefined && str != "" && str.startsWith("ipfs://")) {
+            str = str.split("/")[2];
+        } else if(str != undefined && str != "" && str.startsWith("ipfs:/")) {
+            str = str.split("/")[2];
+        } else if(str != undefined && str != "") {
+            str = str;
+        }
+
         metaUrl = `https://ipfs.io/ipfs/${str}` 
     } 
 
@@ -340,6 +358,7 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
         // Checks if metadata contains an image property.
         metaImgAvailable = await checkIfImageAvailable(metaUrl).catch(console.log);
         console.log("Metadata Image checked.");
+        console.log(metaImgAvailable);
         
 
         if (metaImgAvailable != false) {
@@ -351,6 +370,10 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
                 metaCID = metaImgAvailable.split("/")[3];
             } else if(metaImgAvailable != undefined && metaImgAvailable != "" && metaImgAvailable.startsWith("ipfs://")) {
                 metaCID = metaImgAvailable.split("/")[2];
+            } else if(metaImgAvailable != undefined && metaImgAvailable != "" && metaImgAvailable.startsWith("ipfs:/")) {
+                metaCID = metaImgAvailable.split("/")[2];
+            } else if(metaImgAvailable != undefined && metaImgAvailable != "") {
+                metaCID = metaImgAvailable;
             }
             console.log("CID checked.");
             console.log(metaCID);
@@ -361,19 +384,10 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
                 metaImgAvailable = "https://ipfs.io/ipfs/" + metaImgAvailable.split("ipfs://ipfs/").pop();
             } else if(metaImgAvailable != undefined && metaImgAvailable != "" && metaImgAvailable.startsWith("ipfs://")) {
                 metaImgAvailable = "https://ipfs.io/ipfs/" + metaImgAvailable.split("ipfs://").pop();
+            } else if(metaImgAvailable != undefined && metaImgAvailable != "") {
+                metaImgAvailable = "https://ipfs.io/ipfs/" + metaImgAvailable;
             } 
             console.log("Mata Image Url get.");
-
-
-            // Gets the size of the metadata image. Just a fixed example.
-            await downloadImage(metaImgAvailable, `../../Hedera/temp/image.gif`);
-            console.log("Downloaded image");
-
-        
-            // Get Image meta
-            dimensions = await sizeOf(`./temp/image.gif`);
-            console.log(dimensions);
-            console.log("Checked image dimensions.");
             
 
             // Checks if the image is uploaded to ipfs.
@@ -386,6 +400,7 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
             console.log("Meta image SSL checked.");
 
 
+            console.log(metaImgAvailable);
             // Pings the metadata image.
             start = Date.now() / 1000;
             await fetch(metaImgAvailable).then(() => mediaLatency = Date.now() / 1000 - start);
@@ -427,10 +442,6 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
     console.log(metaHederaHIP17Compliance == false? "In Compliance with Token Standard HIP-17 and greater: F" : metaHederaHIP17Compliance == true? "In Compliance with Token Standard HIP-17 and greater: A" : "In Compliance with Token Standard HIP-17 and greater: Invalid Token Id");
     console.log(metaHederaHIP10Compliance == false? "In Compliance with Metadata Standard HIP-10: F" : "In Compliance with Metadata Standard HIP-10: A");
     
-
-    // No MVP
-    console.log(dimensions == undefined? "Image Resolution: Unknown" : "Image resolution: " + dimensions.width + "p x " + dimensions.height + "p");
-    console.log(dimensions == undefined? "Image Extension: Unknown" : "Image extension: " + dimensions.type);
     console.log(metadataLatency < 100? "Metadata Latency: A" : 'Metadata Latency: F');
     console.log(mediaLatency < 100? "Media Latency: A" : 'Media Latency: F');
 
@@ -476,4 +487,4 @@ async function getNftInfoByCollectionAndId(tokenId, serial) {
 
 }
 
-getNftInfoByCollectionAndId("0.0.835094", "10");
+getNftInfoByCollectionAndId("0.0.914500", "19");
