@@ -13,11 +13,15 @@ async function main(collectionAddress, id) {
         let txs = {};
 
         for(const tx of json["result"]) {
-            console.log(tx);
+
+            if(tx["transactionHash"] in txs == false) {
+                console.log(tx["transactionHash"]);
+                txs[tx["transactionHash"]] = tx["transactionHash"];
+                nftTxList.push(tx);
+            }
 
         }
 
-        nftTxList = json["result"];
     })
     .catch(err => console.log("Nft Txs Query Error: " + err))
 
