@@ -12,15 +12,18 @@ async function main(collectionAddress, id) {
     await api.log.getLogs(collectionAddress, 0, 99999999, undefined, "AND", undefined, "AND", undefined, "AND", web3.utils.padLeft(web3.utils.numberToHex(id), 64))
     .then(json => {
         let txs = {};
+        let totalFee = 0;
 
         for(const tx of json["result"]) {
 
             if(tx["transactionHash"] in txs == false) {
                 txs[tx["transactionHash"]] = tx["transactionHash"];
+                const used = web3.utils.hexToNumber(tx["gasUsed"]);
+                const value = web3.utils.fromWei(web3.utils.hexToNumberString(tx["gasPrice"]));
+                totalFee += value * used;
+                
                 nftTxList.push(tx);
-                console.log(tx);
-                console.log(web3.utils.hexToNumber(tx["gasPrice"]));
-                console.log(web3.utils.hexToNumber(tx["gasUsed"]));
+                console.log(totalFee);
                 sumOfGas += web3.utils.hexToNumber(tx["gasUsed"]);
             }
 
