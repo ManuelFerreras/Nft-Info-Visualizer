@@ -4,7 +4,8 @@ const Web3 = require("web3");
 const ethNetwork = 'https://mainnet.infura.io/v3/d7f30da03a734567a801120b36cc7f6a';
 const web3 = new Web3(new Web3.providers.HttpProvider(ethNetwork));
 
-let nftTxList;
+let nftTxList = [];
+let sumOfGas = 0;
 
 async function main(collectionAddress, id) {
 
@@ -15,15 +16,20 @@ async function main(collectionAddress, id) {
         for(const tx of json["result"]) {
 
             if(tx["transactionHash"] in txs == false) {
-                console.log(tx["transactionHash"]);
                 txs[tx["transactionHash"]] = tx["transactionHash"];
                 nftTxList.push(tx);
+                console.log(tx);
+                console.log(web3.utils.hexToNumber(tx["gasPrice"]));
+                console.log(web3.utils.hexToNumber(tx["gasUsed"]));
+                sumOfGas += web3.utils.hexToNumber(tx["gasUsed"]);
             }
 
         }
 
     })
     .catch(err => console.log("Nft Txs Query Error: " + err))
+
+    console.log(sumOfGas);
 
 }
 
